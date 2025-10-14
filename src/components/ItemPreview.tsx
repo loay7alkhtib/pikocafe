@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useRef } from 'react';
-import { X, Plus, Tag, ArrowDown } from 'lucide-react';
+import { X, Plus, Tag, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useLang } from '../lib/LangContext';
 import { t, translateSize } from '../lib/i18n';
@@ -11,12 +11,22 @@ interface ItemPreviewProps {
   isOpen: boolean;
   onClose: () => void;
   item: {
+    id: string;
     names: { en: string; tr: string; ar: string };
     price: number;
     image?: string | null;
     tags?: string[];
     variants?: ItemVariant[];
   } | null;
+  items?: {
+    id: string;
+    names: { en: string; tr: string; ar: string };
+    price: number;
+    image?: string | null;
+    tags?: string[];
+    variants?: ItemVariant[];
+  }[];
+  currentIndex?: number;
   onAdd: (size?: string, price?: number) => void;
   categoryName?: string;
 }
@@ -25,6 +35,8 @@ const ItemPreview = memo(function ItemPreview({
   isOpen, 
   onClose, 
   item, 
+  items,
+  currentIndex = 0,
   onAdd,
   categoryName 
 }: ItemPreviewProps) {
@@ -33,14 +45,28 @@ const ItemPreview = memo(function ItemPreview({
   const [isDragging, setIsDragging] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
+  const [currentItemIndex, setCurrentItemIndex] = useState(currentIndex);
   const dragConstraintsRef = useRef<HTMLDivElement>(null);
 
-  // Handle keyboard events for spacebar and escape to close
+  // Update current item index when currentIndex prop changes
+  useEffect(() => {
+    setCurrentItemIndex(currentIndex);
+  }, [currentIndex]);
+
+  // Handle keyboard events for spacebar, escape to close, and arrow keys for navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isOpen && (event.code === 'Space' || event.key === 'Escape')) {
-        event.preventDefault(); // Prevent page scroll or default escape behavior
+      if (!isOpen || !items || items.length === 0) return;
+
+      if (event.code === 'Space' || event.key === 'Escape') {
+        event.preventDefault();
         onClose();
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        navigateToPrevious();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        navigateToNext();
       }
     };
 
@@ -54,11 +80,11 @@ const ItemPreview = memo(function ItemPreview({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, items, currentItemIndex]);
 
   // Detect image aspect ratio when it loads
   useEffect(() => {
-    if (!item?.image) {
+    if (!currentItem?.image) {
       setImageLoaded(false);
       setImageAspectRatio(null);
       return;
@@ -74,31 +100,45 @@ const ItemPreview = memo(function ItemPreview({
       setImageLoaded(true);
       setImageAspectRatio(null);
     };
-    img.src = item.image;
-  }, [item?.image]);
+    img.src = currentItem.image;
+  }, [currentItem?.image]);
 
-  if (!item) return null;
+  // Navigation functions
+  const navigateToPrevious = () => {
+    if (!items || items.length === 0) return;
+    setCurrentItemIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1));
+  };
 
-  const itemName = item.names[lang] || item.names.en;
-  const hasVariants = item.variants && item.variants.length > 0;
+  const navigateToNext = () => {
+    if (!items || items.length === 0) return;
+    setCurrentItemIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0));
+  };
+
+  // Get current item (either from props or items array)
+  const currentItem = items && items.length > 0 ? items[currentItemIndex] : item;
+  
+  if (!currentItem) return null;
+
+  const itemName = currentItem.names[lang] || currentItem.names.en;
+  const hasVariants = currentItem.variants && currentItem.variants.length > 0;
   
   // Get price based on selected size
   const getDisplayPrice = () => {
     if (hasVariants && selectedSize) {
-      const variant = item.variants?.find(v => v.size === selectedSize);
-      return variant?.price || item.price;
+      const variant = currentItem.variants?.find(v => v.size === selectedSize);
+      return variant?.price || currentItem.price;
     }
-    return item.price;
+    return currentItem.price;
   };
 
   const handleAddToCart = () => {
     if (hasVariants && !selectedSize) {
       // Auto-select first size if none selected
-      const firstSize = item.variants![0].size;
-      const firstPrice = item.variants![0].price;
+      const firstSize = currentItem.variants![0].size;
+      const firstPrice = currentItem.variants![0].price;
       onAdd(firstSize, firstPrice);
     } else if (hasVariants && selectedSize) {
-      const variant = item.variants?.find(v => v.size === selectedSize);
+      const variant = currentItem.variants?.find(v => v.size === selectedSize);
       onAdd(selectedSize, variant?.price);
     } else {
       onAdd();
@@ -116,6 +156,14 @@ const ItemPreview = memo(function ItemPreview({
     if (offset.y > swipeThreshold || velocity.y > velocityThreshold) {
       onClose();
     }
+    // Navigate on horizontal swipes
+    else if (Math.abs(offset.x) > swipeThreshold || Math.abs(velocity.x) > velocityThreshold) {
+      if (offset.x > 0 || velocity.x > 0) {
+        navigateToPrevious(); // Swipe right = previous
+      } else {
+        navigateToNext(); // Swipe left = next
+      }
+    }
     
     setIsDragging(false);
   };
@@ -125,8 +173,8 @@ const ItemPreview = memo(function ItemPreview({
   };
 
   // Auto-select first size on open
-  if (hasVariants && !selectedSize && item.variants) {
-    setSelectedSize(item.variants[0].size);
+  if (hasVariants && !selectedSize && currentItem.variants) {
+    setSelectedSize(currentItem.variants[0].size);
   }
 
   return (
@@ -159,9 +207,9 @@ const ItemPreview = memo(function ItemPreview({
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-card rounded-3xl shadow-2xl overflow-hidden max-w-2xl w-full touch-pan-y"
               onClick={(e) => e.stopPropagation()}
-              drag="y"
+              drag={items && items.length > 1 ? true : "y"}
               dragConstraints={dragConstraintsRef}
-              dragElastic={{ top: 0, bottom: 0.2 }}
+              dragElastic={{ top: 0, bottom: 0.2, left: items && items.length > 1 ? 0.1 : 0, right: items && items.length > 1 ? 0.1 : 0 }}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               dragMomentum={false}
@@ -177,9 +225,30 @@ const ItemPreview = memo(function ItemPreview({
                 <X className="w-5 h-5" />
               </button>
 
+              {/* Navigation Buttons - Only show if there are multiple items */}
+              {items && items.length > 1 && (
+                <>
+                  {/* Previous Button */}
+                  <button
+                    onClick={navigateToPrevious}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-background transition-colors touch-manipulation"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={navigateToNext}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-background/90 backdrop-blur-sm shadow-lg flex items-center justify-center hover:bg-background transition-colors touch-manipulation"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+
               {/* Image - Adaptive Height */}
               <div className="relative bg-muted/30 overflow-hidden">
-                {item.image ? (
+                {currentItem.image ? (
                   <div 
                     className="relative w-full flex items-center justify-center"
                     style={{ 
@@ -189,7 +258,7 @@ const ItemPreview = memo(function ItemPreview({
                     }}
                   >
                     <ImageWithFallback
-                      src={item.image}
+                      src={currentItem.image}
                       alt={itemName}
                       className="max-w-full max-h-full object-contain"
                       onLoad={() => setImageLoaded(true)}
@@ -198,6 +267,13 @@ const ItemPreview = memo(function ItemPreview({
                 ) : (
                   <div className="w-full h-48 sm:h-64 md:h-72 flex items-center justify-center">
                     <span className="text-6xl sm:text-7xl md:text-8xl">🍽️</span>
+                  </div>
+                )}
+
+                {/* Item Counter - Only show if there are multiple items */}
+                {items && items.length > 1 && (
+                  <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium">
+                    {currentItemIndex + 1} / {items.length}
                   </div>
                 )}
               </div>
@@ -228,7 +304,7 @@ const ItemPreview = memo(function ItemPreview({
                       {t('selectSize', lang)}
                     </p>
                     <div className="grid grid-cols-3 gap-1.5">
-                      {item.variants!.map((variant) => (
+                      {currentItem.variants!.map((variant) => (
                         <button
                           key={variant.size}
                           onClick={() => setSelectedSize(variant.size)}
@@ -251,9 +327,9 @@ const ItemPreview = memo(function ItemPreview({
                 )}
 
                 {/* Tags */}
-                {item.tags && item.tags.length > 0 && (
+                {currentItem.tags && currentItem.tags.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap pt-2">
-                    {item.tags.map((tag, i) => (
+                    {currentItem.tags.map((tag, i) => (
                       <span
                         key={i}
                         className="text-xs px-2.5 py-1 rounded-full bg-secondary/70 text-secondary-foreground"

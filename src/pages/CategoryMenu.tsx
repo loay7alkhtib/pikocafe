@@ -381,6 +381,8 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
         isOpen={!!previewItem}
         onClose={() => setPreviewItem(null)}
         item={previewItem}
+        items={isSearching ? searchResults : items}
+        currentIndex={previewItem ? (isSearching ? searchResults.findIndex(item => item.id === previewItem.id) : items.findIndex(item => item.id === previewItem.id)) : 0}
         onAdd={(size, price) => previewItem && handleAddItem(previewItem, size, price)}
         categoryName={category ? (category.names[lang] || category.names.en) : undefined}
       />
