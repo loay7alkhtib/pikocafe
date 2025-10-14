@@ -9,13 +9,14 @@ import ItemCard from '../components/ItemCard';
 import ItemPreview from '../components/ItemPreview';
 import CategoryCard from '../components/CategoryCard';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { Separator } from '../components/ui/separator';
 import { useLang } from '../lib/LangContext';
 import { useCart } from '../lib/CartContext';
 import { useData } from '../lib/DataContext';
 import { t, dirFor } from '../lib/i18n';
 import { Item } from '../lib/supabase';
-import { ArrowLeft, Grid3x3 } from 'lucide-react';
+import { ArrowLeft, Grid3x3, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CategoryMenuProps {
@@ -29,6 +30,8 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
   const { categories, getCategoryItems } = useData();
   const [previewItem, setPreviewItem] = useState<Item | null>(null);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   // Scroll to top when category changes
   useEffect(() => {
@@ -74,6 +77,29 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
     getCategoryItems(categoryId),
     [getCategoryItems, categoryId]
   );
+
+  // Search functionality
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    
+    const query = searchQuery.toLowerCase().trim();
+    return items.filter(item => 
+      item.names.en.toLowerCase().includes(query) ||
+      item.names.tr?.toLowerCase().includes(query) ||
+      item.names.ar?.toLowerCase().includes(query) ||
+      item.tags?.some(tag => tag.toLowerCase().includes(query))
+    );
+  }, [items, searchQuery]);
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setIsSearching(query.trim().length > 0);
+  }, []);
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+    setIsSearching(false);
+  }, []);
 
   const handleAddItem = useCallback((item: Item, size?: string, customPrice?: number) => {
     const displayPrice = customPrice || item.price;
@@ -149,7 +175,90 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
           </div>
         )}
 
-        {items.length === 0 ? (
+        {/* Search Bar */}
+        <div className="mb-6 sm:mb-8">
+          <div className="relative max-w-md mx-auto">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              type="text"
+              placeholder={
+                lang === 'en' ? 'Search items...' :
+                lang === 'tr' ? 'Ürün ara...' :
+                'البحث عن العناصر...'
+              }
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10 pr-10 h-11 rounded-xl border-border focus:border-primary"
+            />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Search Results or Category Items */}
+        {isSearching ? (
+          searchResults.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-sm sm:text-base">
+                {lang === 'en' ? `No items found for "${searchQuery}"` :
+                 lang === 'tr' ? `"${searchQuery}" için ürün bulunamadı` :
+                 `لم يتم العثور على عناصر لـ "${searchQuery}"`}
+              </p>
+              <p className="text-xs mt-2 opacity-75">
+                {lang === 'en' ? 'Try different keywords' :
+                 lang === 'tr' ? 'Farklı anahtar kelimeler deneyin' :
+                 'جرب كلمات مفتاحية مختلفة'}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-6">
+                <p className="text-sm text-muted-foreground">
+                  {lang === 'en' ? `${searchResults.length} item${searchResults.length !== 1 ? 's' : ''} found for "${searchQuery}"` :
+                   lang === 'tr' ? `"${searchQuery}" için ${searchResults.length} ürün bulundu` :
+                   `تم العثور على ${searchResults.length} عنصر لـ "${searchQuery}"`}
+                </p>
+              </div>
+              <Masonry
+                breakpointCols={breakpointColumnsObj}
+                className="masonry-grid"
+                columnClassName="masonry-grid_column"
+              >
+                {searchResults.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.2) }}
+                  >
+                    <ItemCard
+                      name={item.names[lang] || item.names.en}
+                      price={item.price}
+                      image={item.image}
+                      tags={item.tags}
+                      variants={item.variants}
+                      onAdd={() => {
+                        if (item.variants && item.variants.length > 0) {
+                          setPreviewItem(item);
+                        } else {
+                          handleAddItem(item);
+                        }
+                      }}
+                      onClick={() => setPreviewItem(item)}
+                    />
+                  </motion.div>
+                ))}
+              </Masonry>
+            </>
+          )
+        ) : items.length === 0 ? (
           <div className="text-start py-12 text-muted-foreground">
             <p className="text-sm sm:text-base">
               {lang === 'en' ? 'No items in this category yet' :
