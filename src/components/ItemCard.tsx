@@ -12,11 +12,12 @@ interface ItemCardProps {
   image?: string | null;
   tags?: string[];
   variants?: ItemVariant[];
+  isLucky?: boolean;
   onAdd: () => void;
   onClick?: () => void;
 }
 
-const ItemCard = memo(function ItemCard({ name, price, image, tags = [], variants, onAdd, onClick }: ItemCardProps) {
+const ItemCard = memo(function ItemCard({ name, price, image, tags = [], variants, isLucky = false, onAdd, onClick }: ItemCardProps) {
   const { lang } = useLang();
   const hasVariants = variants && variants.length > 0;
   const [aspectRatio, setAspectRatio] = useState<number>(4 / 3); // Default 4:3
@@ -49,9 +50,20 @@ const ItemCard = memo(function ItemCard({ name, price, image, tags = [], variant
       onClick={onClick}
       className="group relative h-full flex flex-col cursor-pointer touch-manipulation"
     >
-      {/* Liquid Glass Card Container */}
-      <div className="relative h-full flex flex-col rounded-3xl overflow-hidden bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-white/10 dark:via-white/5 dark:to-white/[0.02] backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-500 group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)] dark:group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] group-hover:border-white/30 dark:group-hover:border-white/20">
+          {/* Liquid Glass Card Container */}
+          <div className={`relative h-full flex flex-col rounded-3xl overflow-hidden bg-gradient-to-br from-white/80 via-white/60 to-white/40 dark:from-white/10 dark:via-white/5 dark:to-white/[0.02] backdrop-blur-xl border transition-all duration-500 group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.12)] dark:group-hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] group-hover:border-white/30 dark:group-hover:border-white/20 ${
+            isLucky 
+              ? 'border-yellow-400/60 shadow-[0_8px_32px_rgba(255,193,7,0.3)] dark:shadow-[0_8px_32px_rgba(255,193,7,0.2)] animate-pulse' 
+              : 'border-white/20 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]'
+          }`}>
         
+        {/* Lucky Indicator */}
+        {isLucky && (
+          <div className="absolute top-2 left-2 z-20 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-2 py-1 rounded-full font-bold shadow-lg">
+            ✨ Lucky Pick!
+          </div>
+        )}
+
         {/* Shimmer Effect on Hover */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
           <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/10 to-transparent dark:via-white/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />

@@ -32,6 +32,25 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [luckyItemId, setLuckyItemId] = useState<string | null>(null);
+
+  // Check for lucky item parameter
+  useEffect(() => {
+    if (router.query.lucky && typeof router.query.lucky === 'string') {
+      setLuckyItemId(router.query.lucky);
+      // Open the item preview for the lucky item
+      const items = getCategoryItems(categoryId);
+      const luckyItem = items.find(item => item.id === router.query.lucky);
+      if (luckyItem) {
+        setPreviewItem(luckyItem);
+      }
+      // Clear the query parameter after a delay
+      setTimeout(() => {
+        router.replace(`/category/${categoryId}`, undefined, { shallow: true });
+        setLuckyItemId(null);
+      }, 3000);
+    }
+  }, [router.query.lucky, categoryId, getCategoryItems, router]);
 
   // Scroll to top when category changes
   useEffect(() => {
@@ -244,6 +263,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
                       image={item.image}
                       tags={item.tags}
                       variants={item.variants}
+                      isLucky={luckyItemId === item.id}
                       onAdd={() => {
                         if (item.variants && item.variants.length > 0) {
                           setPreviewItem(item);
