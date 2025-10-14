@@ -1,10 +1,11 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import type { Identifier, XYCoord } from 'dnd-core';
 import { TableCell, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { GripVertical, Edit, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { GripVertical, Edit, Trash2, Check, X } from 'lucide-react';
 import { Item, Category } from '../../lib/supabase';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 
@@ -15,6 +16,7 @@ interface DraggableItemProps {
   onMove: (dragIndex: number, hoverIndex: number) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
+  onCategoryChange: (itemId: string, newCategoryId: string) => void;
 }
 
 interface DragItem {
@@ -31,8 +33,11 @@ export default function DraggableItem({
   onMove,
   onEdit,
   onDelete,
+  onCategoryChange,
 }: DraggableItemProps) {
   const ref = useRef<HTMLTableRowElement>(null);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [tempCategoryId, setTempCategoryId] = useState(item.category_id);
 
   const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: Identifier | null }>({
     accept: 'item',
@@ -94,6 +99,23 @@ export default function DraggableItem({
 
   const category = categories.find((c) => c.id === item.category_id);
 
+  const handleCategoryEdit = () => {
+    setIsEditingCategory(true);
+    setTempCategoryId(item.category_id);
+  };
+
+  const handleCategorySave = () => {
+    if (tempCategoryId !== item.category_id) {
+      onCategoryChange(item.id, tempCategoryId);
+    }
+    setIsEditingCategory(false);
+  };
+
+  const handleCategoryCancel = () => {
+    setTempCategoryId(item.category_id);
+    setIsEditingCategory(false);
+  };
+
   return (
     <TableRow 
       ref={ref} 
@@ -130,10 +152,49 @@ export default function DraggableItem({
       </TableCell>
       <TableCell className="font-medium">{item.price} TL</TableCell>
       <TableCell className="hidden lg:table-cell">
-        {category && (
-          <Badge variant="outline">
-            {category.icon} {category.names.en}
-          </Badge>
+        {isEditingCategory ? (
+          <div className="flex items-center gap-2">
+            <Select value={tempCategoryId} onValueChange={setTempCategoryId}>
+              <SelectTrigger className="w-[180px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.names.en}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCategorySave}
+              className="h-6 w-6 p-0 hover:bg-green-100 hover:text-green-600"
+            >
+              <Check className="h-3 w-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleCategoryCancel}
+              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        ) : (
+          <div 
+            className="cursor-pointer group"
+            onClick={handleCategoryEdit}
+            title="Click to change category"
+          >
+            {category && (
+              <Badge variant="outline" className="group-hover:bg-primary/10 group-hover:border-primary/50 transition-colors">
+                {category.icon} {category.names.en}
+              </Badge>
+            )}
+          </div>
         )}
       </TableCell>
       <TableCell className="hidden xl:table-cell">

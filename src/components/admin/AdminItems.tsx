@@ -193,6 +193,38 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     }
   };
 
+  const handleCategoryChange = async (itemId: string, newCategoryId: string) => {
+    try {
+      const item = localItems.find(item => item.id === itemId);
+      if (!item) return;
+
+      // Update the item's category in the backend
+      await itemsAPI.update(itemId, {
+        ...item,
+        category_id: newCategoryId
+      });
+
+      // Update local state immediately for better UX
+      setLocalItems(prevItems => 
+        prevItems.map(item => 
+          item.id === itemId 
+            ? { ...item, category_id: newCategoryId }
+            : item
+        )
+      );
+
+      const newCategory = categories.find(cat => cat.id === newCategoryId);
+      const categoryName = newCategory ? (newCategory.names[lang] || newCategory.names.en) : 'Unknown';
+      
+      toast.success(`Item moved to "${categoryName}" category`);
+    } catch (error: any) {
+      console.error('Category change error:', error);
+      toast.error(error.message || 'Failed to change category');
+      // Refresh to get the correct state
+      onRefresh();
+    }
+  };
+
 
   return (
     <div className="space-y-4">
@@ -332,6 +364,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
                     onMove={moveItem}
                     onEdit={openDialog}
                     onDelete={handleDelete}
+                    onCategoryChange={handleCategoryChange}
                   />
                 ))
               )}
