@@ -93,7 +93,7 @@ const LuckyButton = ({ onItemSelected }: LuckyButtonProps) => {
       <Button
         onClick={handleLuckySpin}
         disabled={isSpinning}
-        className="h-14 px-8 rounded-2xl font-bold text-lg bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white shadow-xl"
+        className="h-10 px-4 rounded-xl font-medium text-sm bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white shadow-lg"
       >
         <div className="flex items-center gap-2">
           {isSpinning ? (
@@ -102,9 +102,9 @@ const LuckyButton = ({ onItemSelected }: LuckyButtonProps) => {
                 animate={{ rotate: 360 }}
                 transition={{ duration: 0.5, repeat: Infinity, ease: "linear" }}
               >
-                <Shuffle className="w-6 h-6" />
+                <Shuffle className="w-4 h-4" />
               </motion.div>
-              <span>
+              <span className="hidden sm:inline">
                 {lang === 'en' ? 'Picking...' :
                  lang === 'tr' ? 'Seçiliyor...' :
                  'جاري الاختيار...'}
@@ -112,8 +112,13 @@ const LuckyButton = ({ onItemSelected }: LuckyButtonProps) => {
             </>
           ) : (
             <>
-              <Sparkles className="w-6 h-6" />
-              <span>{getLuckyText()}</span>
+              <Sparkles className="w-4 h-4" />
+              <span className="hidden sm:inline">{getLuckyText()}</span>
+              <span className="sm:hidden">
+                {lang === 'en' ? 'Lucky' :
+                 lang === 'tr' ? 'Şanslı' :
+                 'محظوظ'}
+              </span>
             </>
           )}
         </div>

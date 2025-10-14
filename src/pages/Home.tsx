@@ -52,39 +52,28 @@ const Home = memo(function Home() {
         </div>
       </section>
 
-      {/* Lucky Button Section */}
-      <section className="w-full bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 py-8 sm:py-12">
-        <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-center"
-          >
-            <h3 className="text-xl sm:text-2xl md:text-3xl font-medium mb-4">
-              {lang === 'en' ? 'Can\'t Decide?' :
-               lang === 'tr' ? 'Karar Veremiyor musun?' :
-               'لا تستطيع أن تقرر؟'}
-            </h3>
-            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-              {lang === 'en' ? 'Let our magical Lucky Button surprise you with the perfect choice!' :
-               lang === 'tr' ? 'Sihirli Şanslı Butonumuzun sizi mükemmel seçimle şaşırtmasına izin verin!' :
-               'دع زر الحظ السحري يفاجئك بالاختيار المثالي!'}
-            </p>
-            <LuckyButton />
-          </motion.div>
-        </div>
-      </section>
 
       {/* Categories Section */}
       <section className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 md:py-10 lg:py-12">
         <div className="mb-6 sm:mb-8 text-start">
-          <h3 className="text-lg sm:text-xl md:text-2xl font-medium mb-1">
-            {t('specialties', lang)}
-          </h3>
-          <p className="text-muted-foreground text-sm sm:text-base">
-            {t('discover', lang)}
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div>
+              <h3 className="text-lg sm:text-xl md:text-2xl font-medium mb-1">
+                {t('specialties', lang)}
+              </h3>
+              <p className="text-muted-foreground text-sm sm:text-base">
+                {t('discover', lang)}
+              </p>
+            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="flex justify-end sm:justify-start"
+            >
+              <LuckyButton />
+            </motion.div>
+          </div>
         </div>
 
         <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
