@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import { X, Plus, Tag, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useLang } from '../lib/LangContext';
@@ -48,6 +48,20 @@ const ItemPreview = memo(function ItemPreview({
   const [currentItemIndex, setCurrentItemIndex] = useState(currentIndex);
   const dragConstraintsRef = useRef<HTMLDivElement>(null);
 
+  // Navigation functions
+  const navigateToPrevious = useCallback(() => {
+    if (!items || items.length === 0) return;
+    setCurrentItemIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1));
+  }, [items]);
+
+  const navigateToNext = useCallback(() => {
+    if (!items || items.length === 0) return;
+    setCurrentItemIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0));
+  }, [items]);
+
+  // Get current item (either from props or items array)
+  const currentItem = items && items.length > 0 ? items[currentItemIndex] : item;
+
   // Update current item index when currentIndex prop changes
   useEffect(() => {
     setCurrentItemIndex(currentIndex);
@@ -80,7 +94,7 @@ const ItemPreview = memo(function ItemPreview({
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose, items, currentItemIndex]);
+  }, [isOpen, onClose, items, currentItemIndex, navigateToPrevious, navigateToNext]);
 
   // Detect image aspect ratio when it loads
   useEffect(() => {
@@ -102,20 +116,6 @@ const ItemPreview = memo(function ItemPreview({
     };
     img.src = currentItem.image;
   }, [currentItem?.image]);
-
-  // Navigation functions
-  const navigateToPrevious = () => {
-    if (!items || items.length === 0) return;
-    setCurrentItemIndex((prev) => (prev > 0 ? prev - 1 : items.length - 1));
-  };
-
-  const navigateToNext = () => {
-    if (!items || items.length === 0) return;
-    setCurrentItemIndex((prev) => (prev < items.length - 1 ? prev + 1 : 0));
-  };
-
-  // Get current item (either from props or items array)
-  const currentItem = items && items.length > 0 ? items[currentItemIndex] : item;
   
   if (!currentItem) return null;
 
