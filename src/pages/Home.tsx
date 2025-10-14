@@ -5,6 +5,7 @@ import NavBar from '../components/NavBar';
 import CategoryCard from '../components/CategoryCard';
 import PikoLogoBadge from '../components/PikoLogoBadge';
 import PikoLoader from '../components/PikoLoader';
+import LuckyButton from '../components/LuckyButton';
 import { useLang } from '../lib/LangContext';
 import { useData } from '../lib/DataContext';
 import { t, dirFor } from '../lib/i18n';
@@ -47,6 +48,30 @@ const Home = memo(function Home() {
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-medium px-4">
               {t('tagline', lang)}
             </h2>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Lucky Button Section */}
+      <section className="w-full bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 py-8 sm:py-12">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-center"
+          >
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-medium mb-4">
+              {lang === 'en' ? 'Can\'t Decide?' :
+               lang === 'tr' ? 'Karar Veremiyor musun?' :
+               'لا تستطيع أن تقرر؟'}
+            </h3>
+            <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+              {lang === 'en' ? 'Let our magical Lucky Button surprise you with the perfect choice!' :
+               lang === 'tr' ? 'Sihirli Şanslı Butonumuzun sizi mükemmel seçimle şaşırtmasına izin verin!' :
+               'دع زر الحظ السحري يفاجئك بالاختيار المثالي!'}
+            </p>
+            <LuckyButton />
           </motion.div>
         </div>
       </section>
