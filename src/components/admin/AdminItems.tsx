@@ -26,7 +26,7 @@ import { useLang } from '../../lib/LangContext';
 import { t } from '../../lib/i18n';
 import { itemsAPI, Category, Item } from '../../lib/supabase';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Filter, X, Info } from 'lucide-react';
+import { Plus, Edit, Trash2, Filter, X, Info, Search } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
@@ -42,6 +42,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [localItems, setLocalItems] = useState<Item[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     nameEn: '',
     nameTr: '',
@@ -59,9 +60,23 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
   });
 
   // Filter items by selected category
-  const filteredItems = selectedCategory === 'all' 
-    ? localItems 
-    : localItems.filter(item => item.category_id === selectedCategory);
+  // Filter items by category and search query
+  const filteredItems = localItems.filter(item => {
+    // Category filter
+    const categoryMatch = selectedCategory === 'all' || item.category_id === selectedCategory;
+    
+    // Search filter
+    if (!searchQuery.trim()) return categoryMatch;
+    
+    const query = searchQuery.toLowerCase().trim();
+    const searchMatch = 
+      item.names.en.toLowerCase().includes(query) ||
+      item.names.tr?.toLowerCase().includes(query) ||
+      item.names.ar?.toLowerCase().includes(query) ||
+      item.tags?.some(tag => tag.toLowerCase().includes(query));
+    
+    return categoryMatch && searchMatch;
+  });
 
   const moveItem = useCallback(async (dragIndex: number, hoverIndex: number) => {
     if (dragIndex === hoverIndex) return;
@@ -202,6 +217,33 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
         </Alert>
       )}
 
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            type="text"
+            placeholder="Search items by name or tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 pr-10 h-10 rounded-lg border-border focus:border-primary"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <p className="text-sm text-muted-foreground mt-2">
+            {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''} found for "{searchQuery}"
+          </p>
+        )}
+      </div>
+
       {/* Category Filter */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2">
@@ -258,17 +300,41 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems.map((item, index) => (
-                <DraggableItem
-                  key={item.id}
-                  item={item}
-                  index={index}
-                  categories={categories}
-                  onMove={moveItem}
-                  onEdit={openDialog}
-                  onDelete={handleDelete}
-                />
-              ))}
+              {filteredItems.length === 0 ? (
+                <TableRow>
+                  <td colSpan={6} className="text-center py-12 text-muted-foreground">
+                    {searchQuery ? (
+                      <div className="space-y-2">
+                        <Search className="w-8 h-8 mx-auto opacity-50" />
+                        <p>No items found for "{searchQuery}"</p>
+                        <p className="text-sm">Try adjusting your search terms or category filter</p>
+                      </div>
+                    ) : selectedCategory === 'all' ? (
+                      <div className="space-y-2">
+                        <p>No items found</p>
+                        <p className="text-sm">Add your first item to get started</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p>No items in this category</p>
+                        <p className="text-sm">Try selecting "All Categories" or add items to this category</p>
+                      </div>
+                    )}
+                  </td>
+                </TableRow>
+              ) : (
+                filteredItems.map((item, index) => (
+                  <DraggableItem
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    categories={categories}
+                    onMove={moveItem}
+                    onEdit={openDialog}
+                    onDelete={handleDelete}
+                  />
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
