@@ -192,8 +192,8 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
         )}
       </div>
 
-      {/* Browse More Categories Section - Always show for easy navigation */}
-      {categories.length > 1 && (
+      {/* Browse More Categories Section - Show only other categories */}
+      {categories.filter(cat => cat.id !== categoryId).length > 0 && (
         <div className="max-w-[1400px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12">
           <Separator className="mb-8 sm:mb-12" />
           
@@ -214,7 +214,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
           </div>
 
           <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {categories.map((cat, index) => (
+            {categories.filter(cat => cat.id !== categoryId).map((cat, index) => (
               <motion.div
                 key={cat.id}
                 initial={{ opacity: 0, y: 20 }}
