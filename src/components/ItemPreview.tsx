@@ -67,7 +67,7 @@ const ItemPreview = memo(function ItemPreview({
     setCurrentItemIndex(currentIndex);
   }, [currentIndex]);
 
-  // Handle keyboard events for spacebar, escape to close, and arrow keys for navigation
+  // Handle keyboard events for spacebar, escape to close, and arrow keys for navigation (desktop only)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isOpen || !items || items.length === 0) return;
@@ -75,12 +75,15 @@ const ItemPreview = memo(function ItemPreview({
       if (event.code === 'Space' || event.key === 'Escape') {
         event.preventDefault();
         onClose();
-      } else if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        navigateToPrevious();
-      } else if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        navigateToNext();
+      } else if (typeof window !== 'undefined' && window.innerWidth > 768) {
+        // Only allow arrow key navigation on desktop
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          navigateToPrevious();
+        } else if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          navigateToNext();
+        }
       }
     };
 
@@ -156,12 +159,14 @@ const ItemPreview = memo(function ItemPreview({
     if (offset.y > swipeThreshold || velocity.y > velocityThreshold) {
       onClose();
     }
-    // Navigate on horizontal swipes
-    else if (Math.abs(offset.x) > swipeThreshold || Math.abs(velocity.x) > velocityThreshold) {
-      if (offset.x > 0 || velocity.x > 0) {
-        navigateToPrevious(); // Swipe right = previous
-      } else {
-        navigateToNext(); // Swipe left = next
+    // Navigate on horizontal swipes - only on mobile devices
+    else if (typeof window !== 'undefined' && window.innerWidth <= 768 && items && items.length > 1) {
+      if (Math.abs(offset.x) > swipeThreshold || Math.abs(velocity.x) > velocityThreshold) {
+        if (offset.x > 0 || velocity.x > 0) {
+          navigateToPrevious(); // Swipe right = previous
+        } else {
+          navigateToNext(); // Swipe left = next
+        }
       }
     }
     
@@ -207,9 +212,14 @@ const ItemPreview = memo(function ItemPreview({
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="bg-card rounded-3xl shadow-2xl overflow-hidden max-w-2xl w-full touch-pan-y"
               onClick={(e) => e.stopPropagation()}
-              drag={items && items.length > 1 ? true : "y"}
+              drag={items && items.length > 1 && typeof window !== 'undefined' && window.innerWidth <= 768 ? true : "y"}
               dragConstraints={dragConstraintsRef}
-              dragElastic={{ top: 0, bottom: 0.2, left: items && items.length > 1 ? 0.1 : 0, right: items && items.length > 1 ? 0.1 : 0 }}
+              dragElastic={{ 
+                top: 0, 
+                bottom: 0.2, 
+                left: items && items.length > 1 && typeof window !== 'undefined' && window.innerWidth <= 768 ? 0.1 : 0, 
+                right: items && items.length > 1 && typeof window !== 'undefined' && window.innerWidth <= 768 ? 0.1 : 0 
+              }}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               dragMomentum={false}
@@ -225,8 +235,8 @@ const ItemPreview = memo(function ItemPreview({
                 <X className="w-5 h-5" />
               </button>
 
-              {/* Navigation Buttons - Only show if there are multiple items */}
-              {items && items.length > 1 && (
+              {/* Navigation Buttons - Only show on desktop if there are multiple items */}
+              {items && items.length > 1 && typeof window !== 'undefined' && window.innerWidth > 768 && (
                 <>
                   {/* Previous Button */}
                   <button
