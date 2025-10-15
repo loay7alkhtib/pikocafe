@@ -50,8 +50,8 @@ export interface Order {
   created_at: string;
 }
 
-// API base URL
-const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-4050140e`;
+// API base URL - use local API routes for better reliability
+const API_BASE = '';
 
 // Simple cache for categories (5 minutes TTL)
 let categoriesCache: { data: Category[]; timestamp: number } | null = null;
@@ -87,8 +87,8 @@ export const categoriesAPI = {
     try {
       let data;
       
-      // Always use API call since data is accessed through Edge Functions
-      data = await apiCall('/categories');
+      // Use local API route for better reliability
+      data = await apiCall('/api/categories');
       
       // Update cache
       categoriesCache = {
@@ -104,21 +104,21 @@ export const categoriesAPI = {
   },
   
   create: async (data: Omit<Category, 'id' | 'created_at'>) => {
-    return apiCall('/categories', {
+    return apiCall('/api/categories', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
   
   update: async (id: string, data: Omit<Category, 'id' | 'created_at'>) => {
-    return apiCall(`/categories/${id}`, {
+    return apiCall(`/api/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
   
   delete: async (id: string) => {
-    return apiCall(`/categories/${id}`, {
+    return apiCall(`/api/categories/${id}`, {
       method: 'DELETE',
     });
   },
@@ -128,25 +128,25 @@ export const categoriesAPI = {
 export const itemsAPI = {
   getAll: (categoryId?: string) => {
     const query = categoryId ? `?category_id=${categoryId}` : '';
-    return apiCall(`/items${query}`);
+    return apiCall(`/api/items${query}`);
   },
   
   create: (data: Omit<Item, 'id' | 'created_at'>) => {
-    return apiCall('/items', {
+    return apiCall('/api/items', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
   
   update: (id: string, data: Omit<Item, 'id' | 'created_at'>) => {
-    return apiCall(`/items/${id}`, {
+    return apiCall(`/api/items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
   
   delete: (id: string) => {
-    return apiCall(`/items/${id}`, {
+    return apiCall(`/api/items/${id}`, {
       method: 'DELETE',
     });
   },
