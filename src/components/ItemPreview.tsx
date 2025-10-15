@@ -186,17 +186,37 @@ const ItemPreview = memo(function ItemPreview({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - Click to close */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-          />
+            whileHover={{ opacity: 0.8 }}
+            whileTap={{ opacity: 0.9 }}
+            onClick={(e) => {
+              e.preventDefault();
+              onClose();
+            }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 cursor-pointer"
+            title="Click anywhere to close"
+          >
+            {/* Visual hint for mobile users */}
+            <div className="absolute top-4 left-4 text-white/70 text-sm hidden sm:block">
+              Click background to close
+            </div>
+          </motion.div>
 
           {/* Dialog */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" ref={dragConstraintsRef}>
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" 
+            ref={dragConstraintsRef}
+            onClick={(e) => {
+              // Only close if clicking the container itself, not the dialog
+              if (e.target === e.currentTarget) {
+                onClose();
+              }
+            }}
+          >
             <motion.div
               role="dialog"
               aria-modal="true"
