@@ -145,7 +145,7 @@ export default function CategoryReassigner({ items, categories, onRefresh }: Cat
             <AlertTriangle className="h-4 w-4 text-orange-600" />
             <AlertTitle className="text-orange-800">Items Need Categories</AlertTitle>
             <AlertDescription className="text-orange-700">
-              These items don't have categories assigned. Please assign them to appropriate categories before proceeding.
+              These items don&apos;t have categories assigned. Please assign them to appropriate categories before proceeding.
             </AlertDescription>
           </Alert>
 
