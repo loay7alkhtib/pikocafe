@@ -1,5 +1,6 @@
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { saveSession, loadSession, clearSession, hasSession } from './sessionManager';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 // Simple auth state management
 let currentSession: { 
@@ -83,16 +84,35 @@ export const categoriesAPI = {
       return categoriesCache.data;
     }
     
-    // Fetch from API
-    const data = await apiCall('/categories');
-    
-    // Update cache
-    categoriesCache = {
-      data,
-      timestamp: Date.now()
-    };
-    
-    return data;
+    try {
+      let data;
+      
+      if (isSupabaseConfigured()) {
+        // Use Supabase client
+        const { data: categories, error } = await supabase
+          .from('categories')
+          .select('*')
+          .is('archived_at', null)
+          .order('order', { ascending: true });
+          
+        if (error) throw error;
+        data = categories || [];
+      } else {
+        // Fallback to API call
+        data = await apiCall('/categories');
+      }
+      
+      // Update cache
+      categoriesCache = {
+        data,
+        timestamp: Date.now()
+      };
+      
+      return data;
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
+      throw new Error(error.message || 'Failed to fetch categories');
+    }
   },
   
   create: async (data: Omit<Category, 'id' | 'created_at'>) => {
@@ -146,15 +166,51 @@ export const itemsAPI = {
       method: 'DELETE',
     }),
   
-  archive: (id: string) =>
-    apiCall(`/items/${id}/archive`, {
-      method: 'PATCH',
-    }),
+  archive: async (id: string) => {
+    try {
+      if (isSupabaseConfigured()) {
+        // Use Supabase client for archiving
+        const { error } = await supabase
+          .from('items')
+          .update({ archived_at: new Date().toISOString() })
+          .eq('id', id);
+          
+        if (error) throw error;
+        return { success: true, archived: true };
+      } else {
+        // Fallback to API call
+        return apiCall(`/items/${id}/archive`, {
+          method: 'PATCH',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error archiving item:', error);
+      throw new Error(error.message || 'Failed to archive item');
+    }
+  },
   
-  restore: (id: string) =>
-    apiCall(`/items/${id}/restore`, {
-      method: 'PATCH',
-    }),
+  restore: async (id: string) => {
+    try {
+      if (isSupabaseConfigured()) {
+        // Use Supabase client for restoring
+        const { error } = await supabase
+          .from('items')
+          .update({ archived_at: null })
+          .eq('id', id);
+          
+        if (error) throw error;
+        return { success: true, restored: true };
+      } else {
+        // Fallback to API call
+        return apiCall(`/items/${id}/restore`, {
+          method: 'PATCH',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error restoring item:', error);
+      throw new Error(error.message || 'Failed to restore item');
+    }
+  },
   
   getArchived: () =>
     apiCall('/items/archived'),
