@@ -1,370 +1,317 @@
-import { projectId, publicAnonKey } from '../utils/supabase/info';
-import { saveSession, loadSession, clearSession, hasSession } from './sessionManager';
-import { supabase as supabaseClient, isSupabaseConfigured } from './supabaseClient';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database, Category, Item, Order, Media, ItemVariant, OrderItem, CustomerInfo } from '../types/supabase';
+import { env } from './env';
 
-// Simple auth state management
-let currentSession: { 
-  access_token: string; 
-  user: { email: string; name?: string; isAdmin?: boolean } 
-} | null = null;
+// Type-safe Supabase client
+export type TypedSupabaseClient = SupabaseClient<Database>;
 
-// Database types
-export interface Category {
-  id: string;
-  names: { en: string; tr: string; ar: string };
-  icon: string;
-  image?: string;
-  order: number;
-  created_at: string;
+// Client factory for browser (anonymous access)
+export function createBrowserClient(): TypedSupabaseClient {
+  if (typeof window === 'undefined') {
+    throw new Error('createBrowserClient can only be used in the browser');
+  }
+
+  return createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'piko-cafe-browser',
+      },
+    },
+  });
 }
 
-export interface ItemVariant {
-  size: string; // e.g., "Small", "Medium", "Large"
-  price: number;
+// Client factory for server (service role - full access)
+export function createServerClient(): TypedSupabaseClient {
+  if (typeof window !== 'undefined') {
+    throw new Error('createServerClient can only be used on the server');
+  }
+
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required for server operations');
+  }
+
+  return createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'piko-cafe-server',
+      },
+    },
+  });
 }
 
-export interface Item {
-  id: string;
-  names: { en: string; tr: string; ar: string };
-  category_id: string | null;
-  price: number; // Base price (used if no variants)
-  image: string | null;
-  tags: string[];
-  variants?: ItemVariant[]; // Optional size variants
-  order?: number; // Display order within category
-  created_at: string;
-  archived_at?: string | null; // When item was archived (null = active)
-}
+// Client factory for server with user session (RPC calls)
+export function createServerClientWithAuth(accessToken: string): TypedSupabaseClient {
+  if (typeof window !== 'undefined') {
+    throw new Error('createServerClientWithAuth can only be used on the server');
+  }
 
-export interface Order {
-  id: string;
-  items: { 
-    id: string; 
-    quantity: number; 
-    name: string; 
-    price: number;
-    size?: string; // Optional size variant
-  }[];
-  total: number;
-  status: 'pending' | 'completed';
-  created_at: string;
-}
-
-// API base URL - use local API routes for better reliability
-const API_BASE = '/api';
-
-// Simple cache for categories (5 minutes TTL)
-let categoriesCache: { data: Category[]; timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-// Helper function for API calls
-async function apiCall(endpoint: string, options: RequestInit = {}) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers: {
-      'Authorization': `Bearer ${publicAnonKey}`,
-      'Content-Type': 'application/json',
-      ...options.headers,
+  const client = createClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'piko-cafe-server-auth',
+        'Authorization': `Bearer ${accessToken}`,
+      },
     },
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
-  }
-
-  return response.json();
+  return client;
 }
 
-// Categories API
-export const categoriesAPI = {
-  getAll: async () => {
-    // Check cache first
-    if (categoriesCache && Date.now() - categoriesCache.timestamp < CACHE_TTL) {
-      return categoriesCache.data;
-    }
-    
-    try {
-      let data;
-      
-      // Use local API route for better reliability
-      data = await apiCall('/categories');
-      
-      // Update cache
-      categoriesCache = {
-        data,
-        timestamp: Date.now()
-      };
-      
-      return data;
-    } catch (error: any) {
-      console.error('Error fetching categories:', error);
-      throw new Error(error.message || 'Failed to fetch categories');
-    }
-  },
-  
-  create: async (data: Omit<Category, 'id' | 'created_at'>) => {
-    return apiCall('/categories', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-  
-  update: async (id: string, data: Omit<Category, 'id' | 'created_at'>) => {
-    return apiCall(`/categories/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-  
-  delete: async (id: string) => {
-    return apiCall(`/categories/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
+// Singleton instances (created lazily)
+let browserClient: TypedSupabaseClient | null = null;
+let serverClient: TypedSupabaseClient | null = null;
 
-// Items API
-export const itemsAPI = {
-  getAll: (categoryId?: string) => {
-    const query = categoryId ? `?category_id=${categoryId}` : '';
-    return apiCall(`/items${query}`);
-  },
-  
-  create: (data: Omit<Item, 'id' | 'created_at'>) => {
-    return apiCall('/items', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-  
-  update: (id: string, data: Omit<Item, 'id' | 'created_at'>) => {
-    return apiCall(`/items/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-  
-  delete: (id: string) => {
-    return apiCall(`/items/${id}`, {
-      method: 'DELETE',
-    });
-  },
-  
-  archive: async (id: string) => {
-    return apiCall(`/items/${id}`, {
-      method: 'DELETE',
-    });
-  },
-  
-  restore: async (id: string) => {
-    return apiCall(`/archive/restore/item/${id}`, {
-      method: 'POST',
-    });
-  },
-  
-  getArchived: () => {
-    return apiCall('/archive/items');
-  },
-  
-  // Permanently delete a single archived item
-  deleteArchived: (id: string) => {
-    return apiCall(`/archive/item/${id}`, {
-      method: 'DELETE',
-    });
-  },
-  
-  // Fast server-side bulk deletion of archived items
-  deleteArchivedBulk: (ids?: string[]) => {
-    return apiCall('/archive/delete-bulk', {
-      method: 'POST',
-      body: JSON.stringify({ ids }),
-    });
-  },
-  
-  deleteAll: () => {
-    throw new Error('Delete all operation not available - this is a read-only demo');
-  },
-  
-  bulkCreate: (items: Omit<Item, 'id' | 'created_at'>[]) => {
-    throw new Error('Bulk create operation not available - this is a read-only demo');
-  },
-};
+// Get browser client (singleton)
+export function getBrowserClient(): TypedSupabaseClient {
+  if (typeof window === 'undefined') {
+    throw new Error('getBrowserClient can only be used in the browser');
+  }
 
-// Orders API
-export const ordersAPI = {
-  getAll: () => apiCall('/orders'),
-  
-  create: (data: { items: any[], total: number }) =>
-    apiCall('/orders', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-  
-  update: (id: string, status: 'pending' | 'completed') =>
-    apiCall(`/orders/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    }),
-};
+  if (!browserClient) {
+    browserClient = createBrowserClient();
+  }
 
-// Auth API (custom implementation)
-export const authAPI = {
-  signUp: async (credentials: { email: string; password: string; name: string }) => {
-    try {
-      console.log('🚀 Calling signup API with:', { email: credentials.email, name: credentials.name });
-      console.log('📡 API endpoint:', `${API_BASE}/auth/signup`);
-      
-      const response = await fetch(`${API_BASE}/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${publicAnonKey}`,
-        },
-        body: JSON.stringify(credentials),
-      });
+  return browserClient;
+}
 
-      console.log('📥 Signup response status:', response.status, response.statusText);
-      
-      const responseText = await response.text();
-      console.log('📄 Signup response text:', responseText);
-      
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log('✅ Parsed response:', data);
-      } catch (e) {
-        console.error('❌ Failed to parse response:', e);
-        console.error('Raw response was:', responseText);
-        throw new Error('Invalid server response');
-      }
+// Get server client (singleton)
+export function getServerClient(): TypedSupabaseClient {
+  if (typeof window !== 'undefined') {
+    throw new Error('getServerClient can only be used on the server');
+  }
 
-      if (!response.ok) {
-        console.error('❌ Signup failed with status:', response.status);
-        console.error('❌ Error from server:', data.error);
-        console.error('❌ Full error response:', data);
-        throw new Error(data.error || `Signup failed (${response.status})`);
-      }
+  if (!serverClient) {
+    serverClient = createServerClient();
+  }
 
-      console.log('🎉 Signup successful! Setting session...');
-      currentSession = data.session;
-      
-      // Store session using session manager
-      saveSession(data.session);
-      
-      console.log('✅ Signup complete!');
-      return { data, error: null };
-    } catch (error: any) {
-      console.error('💥 Signup exception:', error);
-      console.error('💥 Error message:', error.message);
-      throw error;
-    }
-  },
+  return serverClient;
+}
 
-  signInWithPassword: async (credentials: { email: string; password: string }) => {
-    console.log('🔐 Attempting login for:', credentials.email);
-    
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${publicAnonKey}`,
-      },
-      body: JSON.stringify(credentials),
-    });
+// Legacy compatibility - will be removed
+export const supabase = typeof window !== 'undefined' ? getBrowserClient() : null;
 
-    console.log('📥 Login response status:', response.status);
+// Database operation helpers with proper typing
+export class DatabaseService {
+  private client: TypedSupabaseClient;
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Login failed' }));
-      console.error('❌ Login failed:', error);
-      throw new Error(error.error || 'Invalid credentials');
+  constructor(client: TypedSupabaseClient) {
+    this.client = client;
+  }
+
+  // Categories
+  async getCategories() {
+    const { data, error } = await this.client
+      .from('categories')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getCategory(id: string) {
+    const { data, error } = await this.client
+      .from('categories')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async createCategory(category: Database['public']['Tables']['categories']['Insert']) {
+    const { data, error } = await this.client
+      .from('categories')
+      .insert(category)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async updateCategory(id: string, updates: Database['public']['Tables']['categories']['Update']) {
+    const { data, error } = await this.client
+      .from('categories')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteCategory(id: string) {
+    const { error } = await this.client
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  // Items
+  async getItems(categoryId?: string, includeArchived = false) {
+    let query = this.client
+      .from('items')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (categoryId) {
+      query = query.eq('category_id', categoryId);
     }
 
-    const data = await response.json();
-    console.log('✅ Login successful!');
-    currentSession = data.session;
-    
-    // Store session using session manager
-    saveSession(data.session);
-    
-    return { data, error: null };
-  },
-
-  getSession: async () => {
-    // Try to get from memory first
-    if (currentSession) {
-      console.log('✅ Session found in memory');
-      return { data: { session: currentSession }, error: null };
+    if (!includeArchived) {
+      query = query.is('archived_at', null);
     }
 
-    // Try to load from storage using session manager
-    const storedSession = loadSession();
-    
-    if (storedSession) {
-      currentSession = storedSession;
-      
-      // Try to verify session is still valid (but don't fail if it can't verify)
-      try {
-        const response = await fetch(`${API_BASE}/auth/session`, {
-          headers: {
-            'Authorization': `Bearer ${storedSession.access_token}`,
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.session) {
-            console.log('✅ Session verified on server');
-            currentSession = data.session;
-            // Update storage with verified session
-            saveSession(data.session);
-            return { data: { session: data.session }, error: null };
-          } else {
-            // Server says session is invalid - clear it
-            console.log('❌ Session invalid on server');
-            currentSession = null;
-            clearSession();
-            return { data: { session: null }, error: null };
-          }
-        } else {
-          // Server error - but keep the local session
-          console.log('⚠️ Server error during verification, using local session');
-          return { data: { session: storedSession }, error: null };
-        }
-      } catch (verifyError) {
-        // If verification request fails, keep using stored session
-        console.log('⚠️ Session verification failed (network error), using local session');
-        return { data: { session: storedSession }, error: null };
-      }
-    }
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  }
 
-    console.log('❌ No session found');
-    return { data: { session: null }, error: null };
-  },
+  async getItem(id: string) {
+    const { data, error } = await this.client
+      .from('items')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-  signOut: async () => {
-    if (currentSession) {
-      try {
-        await fetch(`${API_BASE}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${currentSession.access_token}`,
-          },
-        });
-      } catch (e) {
-        console.error('Logout error:', e);
-      }
-    }
+    if (error) throw error;
+    return data;
+  }
 
-    currentSession = null;
-    clearSession();
+  async createItem(item: Database['public']['Tables']['items']['Insert']) {
+    const { data, error } = await this.client
+      .from('items')
+      .insert(item)
+      .select()
+      .single();
 
-    return { error: null };
-  },
-};
+    if (error) throw error;
+    return data;
+  }
 
-// Export a compatible auth object for backward compatibility
-export const supabase = {
-  auth: authAPI,
-};
+  async updateItem(id: string, updates: Database['public']['Tables']['items']['Update']) {
+    const { data, error } = await this.client
+      .from('items')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async deleteItem(id: string) {
+    const { error } = await this.client
+      .from('items')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  }
+
+  async archiveItem(id: string) {
+    const { data, error } = await this.client
+      .from('items')
+      .update({ 
+        archived_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Orders
+  async getOrders() {
+    const { data, error } = await this.client
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  }
+
+  async createOrder(order: Database['public']['Tables']['orders']['Insert']) {
+    const { data, error } = await this.client
+      .from('orders')
+      .insert(order)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async updateOrder(id: string, updates: Database['public']['Tables']['orders']['Update']) {
+    const { data, error } = await this.client
+      .from('orders')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Media
+  async createMedia(media: Database['public']['Tables']['media']['Insert']) {
+    const { data, error } = await this.client
+      .from('media')
+      .insert(media)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getMediaByKey(key: string) {
+    const { data, error } = await this.client
+      .from('media')
+      .select('*')
+      .eq('key', key)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+}
+
+// Convenience functions
+export function getBrowserDatabaseService(): DatabaseService {
+  return new DatabaseService(getBrowserClient());
+}
+
+export function getServerDatabaseService(): DatabaseService {
+  return new DatabaseService(getServerClient());
+}
+
+// Export types for use in other modules
+export type { Category, Item, Order, Media, ItemVariant, OrderItem, CustomerInfo };
+
+// Export API instances
+export { categoriesAPI, itemsAPI, ordersAPI, authAPI } from './apis';
