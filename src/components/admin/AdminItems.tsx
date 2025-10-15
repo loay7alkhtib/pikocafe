@@ -24,6 +24,7 @@ import { useLang } from '../../lib/LangContext';
 import { t } from '../../lib/i18n';
 import { Category, Item } from '../../lib/supabase';
 import { hybridItemsAPI } from '../../lib/hybridAPI';
+import { itemsAPI } from '../../lib/supabase';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Filter, X, Info, Search, Archive, CheckSquare, Square, MoveRight } from 'lucide-react';
 import { Badge } from '../ui/badge';
@@ -61,10 +62,20 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     order: 0,
   });
 
+  const buildItemPayload = useCallback((item: Item) => ({
+    names: item.names,
+    category_id: item.category_id,
+    price: item.price,
+    image: item.image,
+    tags: item.tags,
+    variants: item.variants && item.variants.length > 0 ? item.variants : undefined,
+    order: item.order ?? 0,
+  }), []);
+
   // Update local items when props change and auto-assign uncategorized items
   useEffect(() => {
     const processedItems = [...items].filter(item => item != null).sort((a, b) => (a.order || 0) - (b.order || 0));
-    
+
     // Check if there are uncategorized items and "Other" category exists
     const otherCategory = categories.find(cat => cat.id === 'cat-other');
     const uncategorizedItems = processedItems.filter(item => !item.category_id);
@@ -74,7 +85,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
       const autoAssignPromises = uncategorizedItems.map(async (item) => {
         try {
           await itemsAPI.update(item.id, {
-            ...item,
+            ...buildItemPayload(item),
             category_id: 'cat-other'
           });
         } catch (error) {
@@ -90,7 +101,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     }
     
     setLocalItems(processedItems);
-  }, [items, categories, onRefresh]);
+  }, [items, categories, onRefresh, buildItemPayload]);
 
   // Filter items by selected category
   // Filter items by category, search query, and archive status
@@ -209,7 +220,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
 
       // Update the item's category in the backend
       await itemsAPI.update(itemId, {
-        ...item,
+        ...buildItemPayload(item),
         category_id: newCategoryId
       });
 

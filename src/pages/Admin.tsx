@@ -153,31 +153,33 @@ const Admin = memo(function Admin() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="diagnostics" className="w-full">
           {/* Simplified Tab Navigation */}
-              <div className="flex justify-center mb-8">
-                <TabsList className="grid w-full max-w-5xl grid-cols-7">
-                  <TabsTrigger value="diagnostics" className="text-sm">
-                    Diagnostics
-                  </TabsTrigger>
-                  <TabsTrigger value="categories" className="text-sm">
-                    Categories
-                  </TabsTrigger>
-                  <TabsTrigger value="items" className="text-sm">
-                    Menu Items
-                  </TabsTrigger>
-                  <TabsTrigger value="smart-categorizer" className="text-sm">
-                    Smart AI
-                  </TabsTrigger>
-                  <TabsTrigger value="orders" className="text-sm">
-                    Orders
-                  </TabsTrigger>
-                  <TabsTrigger value="reorganize" className="text-sm">
-                    Reorganize
-                  </TabsTrigger>
-                  <TabsTrigger value="archive" className="text-sm">
-                    Archive
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+          <div className="mb-8">
+            <div className="overflow-x-auto">
+              <TabsList className="flex md:grid md:grid-cols-7 w-full max-w-5xl mx-auto gap-2 min-w-max">
+                <TabsTrigger value="diagnostics" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+                  Diagnostics
+                </TabsTrigger>
+                <TabsTrigger value="categories" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+                  Categories
+                </TabsTrigger>
+                <TabsTrigger value="items" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+                  Menu Items
+                </TabsTrigger>
+                <TabsTrigger value="smart-categorizer" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+                  Smart AI
+                </TabsTrigger>
+                <TabsTrigger value="orders" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+                  Orders
+                </TabsTrigger>
+                <TabsTrigger value="reorganize" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+                  Reorganize
+                </TabsTrigger>
+                <TabsTrigger value="archive" className="text-xs sm:text-sm whitespace-nowrap px-3 py-2">
+                  Archive
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
 
           {/* Tab Contents */}
           <TabsContent value="diagnostics" className="mt-0">
