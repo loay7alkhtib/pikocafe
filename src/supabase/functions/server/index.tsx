@@ -870,6 +870,87 @@ app.delete("/make-server-4050140e/items/:id", async (c) => {
   }
 });
 
+// Archive item (soft delete via PATCH)
+app.patch("/make-server-4050140e/items/:id/archive", async (c) => {
+  try {
+    const id = c.req.param("id");
+    
+    // Get the item before archiving
+    const item = await kv.get(`piko:item:${id}`);
+    if (!item) {
+      return c.json({ error: "Item not found" }, 404);
+    }
+    
+    // Archive the item (soft delete)
+    const archivedItem = {
+      ...item,
+      deleted_at: new Date().toISOString(),
+      deleted_by: "admin", // Could be extracted from auth token
+    };
+    
+    await kv.set(`piko:archive:item:${id}`, archivedItem);
+    
+    // Add to archive index
+    const archiveIds = await kv.get("piko:archive-item-ids") || [];
+    if (!archiveIds.includes(id)) {
+      archiveIds.push(id);
+      await kv.set("piko:archive-item-ids", archiveIds);
+    }
+    
+    // Remove from active items
+    await kv.del(`piko:item:${id}`);
+    
+    const itemIds = await kv.get("piko:item-ids") || [];
+    const updatedIds = itemIds.filter((iid: string) => iid !== id);
+    await kv.set("piko:item-ids", updatedIds);
+    
+    console.log(`✅ Item archived: ${item.names.en}`);
+    return c.json({ success: true, archived: true });
+  } catch (error: any) {
+    console.error("Error archiving item:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Restore item from archive
+app.patch("/make-server-4050140e/items/:id/restore", async (c) => {
+  try {
+    const id = c.req.param("id");
+    
+    // Get the archived item
+    const archivedItem = await kv.get(`piko:archive:item:${id}`);
+    if (!archivedItem) {
+      return c.json({ error: "Archived item not found" }, 404);
+    }
+    
+    // Remove archived_at and deleted_by fields
+    const { deleted_at, deleted_by, ...restoredItem } = archivedItem;
+    
+    // Restore to active items
+    await kv.set(`piko:item:${id}`, restoredItem);
+    
+    // Add back to active item IDs
+    const itemIds = await kv.get("piko:item-ids") || [];
+    if (!itemIds.includes(id)) {
+      itemIds.push(id);
+      await kv.set("piko:item-ids", itemIds);
+    }
+    
+    // Remove from archive
+    await kv.del(`piko:archive:item:${id}`);
+    
+    const archiveIds = await kv.get("piko:archive-item-ids") || [];
+    const updatedArchiveIds = archiveIds.filter((iid: string) => iid !== id);
+    await kv.set("piko:archive-item-ids", updatedArchiveIds);
+    
+    console.log(`✅ Item restored: ${archivedItem.names.en}`);
+    return c.json({ success: true, restored: true });
+  } catch (error: any) {
+    console.error("Error restoring item:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Orders endpoints
 app.get("/make-server-4050140e/orders", async (c) => {
   try {
