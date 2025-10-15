@@ -96,6 +96,9 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
     if (categoryId === 'cat-other') {
       // For "Other" category, get all uncategorized items
       return allItems.filter(item => !item.category_id && !item.archived_at);
+    } else if (categoryId === 'cat-all-items') {
+      // For "All Items" category, get all items
+      return allItems.filter(item => !item.archived_at);
     }
     return getCategoryItems(categoryId);
   }, [getCategoryItems, categoryId, allItems]);

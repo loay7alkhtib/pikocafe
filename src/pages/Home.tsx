@@ -24,7 +24,7 @@ const Home = memo(function Home() {
       if (category.id === 'cat-other') {
         // Count uncategorized items
         counts[category.id] = items.filter(item => !item.category_id && !item.archived_at).length;
-      } else if (category.id === 'cat-view-all') {
+      } else if (category.id === 'cat-all-items') {
         // Count all items
         counts[category.id] = items.filter(item => !item.archived_at).length;
       } else {
@@ -37,7 +37,7 @@ const Home = memo(function Home() {
   }, [categories, items]);
 
   const handleCategoryClick = useCallback((categoryId: string) => {
-    if (categoryId === 'cat-view-all') {
+    if (categoryId === 'cat-all-items') {
       // Show ViewAllItems component instead of navigating
       router.push('/view-all');
     } else {

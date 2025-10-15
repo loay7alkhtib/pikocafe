@@ -355,6 +355,99 @@ app.get("/make-server-4050140e/auth/session", async (c) => {
   }
 });
 
+// Quick category initialization endpoint
+app.post("/make-server-4050140e/init-categories", async (c) => {
+  try {
+    console.log("🚀 Initializing categories...");
+    
+    const categories = [
+      { 
+        id: "cat-hot-coffee", 
+        names: { en: "Hot Coffee", tr: "Sıcak Kahve", ar: "قهوة ساخنة" }, 
+        icon: "☕", 
+        order: 0 
+      },
+      { 
+        id: "cat-iced-coffee", 
+        names: { en: "Iced Coffee", tr: "Soğuk Kahve", ar: "قهوة مثلجة" }, 
+        icon: "🧊", 
+        order: 1 
+      },
+      { 
+        id: "cat-tea", 
+        names: { en: "Tea", tr: "Çay", ar: "شاي" }, 
+        icon: "🍵", 
+        order: 2 
+      },
+      { 
+        id: "cat-chocolate-drinks", 
+        names: { en: "Chocolate Drinks", tr: "Çikolata İçecekleri", ar: "مشروبات الشوكولاتة" }, 
+        icon: "🍫", 
+        order: 3 
+      },
+      { 
+        id: "cat-smoothies-and-shakes", 
+        names: { en: "Smoothies & Shakes", tr: "Smoothie & Milkshake", ar: "سموذي وميلك شيك" }, 
+        icon: "🥤", 
+        order: 4 
+      },
+      { 
+        id: "cat-juice-and-lemonade", 
+        names: { en: "Juice & Lemonade", tr: "Meyve Suyu & Limonata", ar: "عصائر وليموناضة" }, 
+        icon: "🍋", 
+        order: 5 
+      },
+      { 
+        id: "cat-desserts-and-pastries", 
+        names: { en: "Desserts & Pastries", tr: "Tatlılar & Hamur İşleri", ar: "حلويات ومعجنات" }, 
+        icon: "🍰", 
+        order: 6 
+      },
+      { 
+        id: "cat-misc", 
+        names: { en: "Other Drinks", tr: "Diğer İçecekler", ar: "مشروبات أخرى" }, 
+        icon: "🥛", 
+        order: 7 
+      },
+      { 
+        id: "cat-all-items", 
+        names: { en: "All Items", tr: "Tüm Ürünler", ar: "جميع العناصر" }, 
+        icon: "🍽️", 
+        order: 8 
+      },
+      { 
+        id: "cat-other", 
+        names: { en: "Other", tr: "Diğer", ar: "أخرى" }, 
+        icon: "📦", 
+        order: 9 
+      },
+    ];
+
+    // Store categories
+    const categoryIds = [];
+    for (const category of categories) {
+      const cat = {
+        ...category,
+        created_at: new Date().toISOString(),
+      };
+      await kv.set(`piko:category:${category.id}`, cat);
+      categoryIds.push(category.id);
+    }
+    await kv.set("piko:category-ids", categoryIds);
+    console.log(`✅ Created ${categories.length} categories`);
+
+    return c.json({ 
+      success: true,
+      message: "Categories initialized successfully",
+      categoriesCount: categories.length,
+      categories: categories
+    });
+  } catch (error: any) {
+    console.error("Category initialization error:", error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Initialize full Piko Patisserie menu
 app.post("/make-server-4050140e/init-piko-menu", async (c) => {
   try {
@@ -422,15 +515,15 @@ app.post("/make-server-4050140e/init-piko-menu", async (c) => {
         order: 7 
       },
       { 
-        id: "cat-other", 
-        names: { en: "Other", tr: "Diğer", ar: "أخرى" }, 
-        icon: "📦", 
+        id: "cat-all-items", 
+        names: { en: "All Items", tr: "Tüm Ürünler", ar: "جميع العناصر" }, 
+        icon: "🍽️", 
         order: 8 
       },
       { 
-        id: "cat-view-all", 
-        names: { en: "View All", tr: "Tümünü Gör", ar: "عرض الكل" }, 
-        icon: "📋", 
+        id: "cat-other", 
+        names: { en: "Other", tr: "Diğer", ar: "أخرى" }, 
+        icon: "📦", 
         order: 9 
       },
     ];
@@ -502,8 +595,8 @@ app.post("/make-server-4050140e/init-db", async (c) => {
       { id: generateId(), names: { en: "Pizza & Pasta", tr: "Pizza ve Makarna", ar: "بيتزا ومعكرونة" }, icon: "🍕", image: "https://images.unsplash.com/photo-1727003826885-4512f0a8388a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwaXp6YSUyMHNsaWNlJTIwaXRhbGlhbnxlbnwxfHx8fDE3NjAxNzU1Mjd8MA&ixlib=rb-4.1.0&q=80&w=400&utm_source=figma&utm_medium=referral", order: 6, created_at: new Date().toISOString() },
       { id: generateId(), names: { en: "Sandwiches", tr: "Sandviçler", ar: "ساندويتشات" }, icon: "🥪", image: "https://images.unsplash.com/photo-1563045848-170d3bb67320?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzYW5kd2ljaCUyMGdvdXJtZXQlMjBmb29kfGVufDF8fHx8MTc2MDE3NTUyN3ww&ixlib=rb-4.1.0&q=80&w=400&utm_source=figma&utm_medium=referral", order: 7, created_at: new Date().toISOString() },
       { id: generateId(), names: { en: "Ice Cream", tr: "Dondurma", ar: "آيس كريم" }, icon: "🍨", image: "https://images.unsplash.com/photo-1625234969503-49c7f28bc6ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxpY2UlMjBjcmVhbSUyMHNjb29wfGVufDF8fHx8MTc2MDE3NTUyN3ww&ixlib=rb-4.1.0&q=80&w=400&utm_source=figma&utm_medium=referral", order: 8, created_at: new Date().toISOString() },
-      { id: generateId(), names: { en: "Other", tr: "Diğer", ar: "أخرى" }, icon: "📦", order: 9, created_at: new Date().toISOString() },
-      { id: generateId(), names: { en: "View All", tr: "Tümünü Gör", ar: "عرض الكل" }, icon: "📋", order: 10, created_at: new Date().toISOString() },
+      { id: generateId(), names: { en: "All Items", tr: "Tüm Ürünler", ar: "جميع العناصر" }, icon: "🍽️", order: 9, created_at: new Date().toISOString() },
+      { id: generateId(), names: { en: "Other", tr: "Diğer", ar: "أخرى" }, icon: "📦", order: 10, created_at: new Date().toISOString() },
     ];
 
     // Store categories
