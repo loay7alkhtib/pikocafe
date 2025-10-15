@@ -232,7 +232,7 @@ export default function DiagnosticTool() {
               <Alert>
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Recommendation:</strong> No categories found. Click "Initialize Database" to set up your menu categories.
+                  <strong>Recommendation:</strong> No categories found. Click &quot;Initialize Database&quot; to set up your menu categories.
                 </AlertDescription>
               </Alert>
             )}

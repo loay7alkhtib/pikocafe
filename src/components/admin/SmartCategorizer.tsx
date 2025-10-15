@@ -562,7 +562,7 @@ export default function SmartCategorizer({ categories, items, onRefresh }: Smart
     }
     
     setSelectedResults(new Set());
-  }, [categorizationResults, selectedResults, applyCategorization]);
+  }, [categorizationResults, applyCategorization]);
 
   const toggleSelection = useCallback((itemId: string) => {
     setSelectedResults(prev => {
