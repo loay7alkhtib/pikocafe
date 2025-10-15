@@ -1,7 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
-const API_BASE = 'https://loay7alkhtib.supabase.co/functions/v1/make-server-4050140e';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvYXk3YWxraHRpYiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzMzNjUwNTQ4LCJleHAiOjIwNDkyMjY1NDh9.Nh8cZv5tR7q8q8q8q8q8q8q8q8q8q8q8q8q8q8q8q8';
+import { projectId, publicAnonKey } from '../../src/utils/supabase/info';
+
+const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-4050140e`;
+const ANON_KEY = publicAnonKey;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {

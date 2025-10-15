@@ -1,11 +1,11 @@
 // Supabase Configuration
 // Replace these values with your actual Supabase project details
 
-export const projectId = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID || 'lnpgrvtobvrxzqvtlwzz';
-export const publicAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxucGdydnRvYnZyeHpxdnRsd3p6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTgwNjksImV4cCI6MjA3MzMzNDA2OX0.dm6JokEGPBFf4fXbg_V8Z-UKCQzwxbRPRHy0GROaDs';
+export const projectId = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID || 'loay7alkhtib';
+export const publicAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvYXk3YWxraHRpYiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzMzNjUwNTQ4LCJleHAiOjIwNDkyMjY1NDh9.Nh8cZv5tR7q8q8q8q8q8q8q8q8q8q8q8q8q8q8q8q8';
 
 // Supabase URL
-export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lnpgrvtobvrxzqvtlwzz.supabase.co';
+export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://loay7alkhtib.supabase.co';
 
 // Instructions for setup:
 // 1. Go to your Supabase dashboard: https://supabase.com/dashboard
