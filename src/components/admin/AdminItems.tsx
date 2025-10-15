@@ -60,10 +60,36 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     order: 0,
   });
 
-  // Update local items when props change
+  // Update local items when props change and auto-assign uncategorized items
   useEffect(() => {
-    setLocalItems([...items].filter(item => item != null).sort((a, b) => (a.order || 0) - (b.order || 0)));
-  }, [items]);
+    const processedItems = [...items].filter(item => item != null).sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Check if there are uncategorized items and "Other" category exists
+    const otherCategory = categories.find(cat => cat.id === 'cat-other');
+    const uncategorizedItems = processedItems.filter(item => !item.category_id);
+    
+    if (uncategorizedItems.length > 0 && otherCategory) {
+      // Auto-assign uncategorized items to "Other" category
+      const autoAssignPromises = uncategorizedItems.map(async (item) => {
+        try {
+          await itemsAPI.update(item.id, {
+            ...item,
+            category_id: 'cat-other'
+          });
+        } catch (error) {
+          console.error(`Failed to auto-assign item ${item.id} to Other category:`, error);
+        }
+      });
+      
+      // Run auto-assignment in background
+      Promise.all(autoAssignPromises).then(() => {
+        console.log(`Auto-assigned ${uncategorizedItems.length} items to "Other" category`);
+        onRefresh(); // Refresh to show updated categories
+      });
+    }
+    
+    setLocalItems(processedItems);
+  }, [items, categories, onRefresh]);
 
   // Filter items by selected category
   // Filter items by category, search query, and archive status

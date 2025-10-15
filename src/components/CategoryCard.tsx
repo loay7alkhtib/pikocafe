@@ -6,11 +6,12 @@ interface CategoryCardProps {
   name: string;
   icon: string;
   image?: string;
+  itemCount?: number;
   onClick: () => void;
   onHover?: () => void;
 }
 
-const CategoryCard = memo(function CategoryCard({ name, icon, image, onClick, onHover }: CategoryCardProps) {
+const CategoryCard = memo(function CategoryCard({ name, icon, image, itemCount, onClick, onHover }: CategoryCardProps) {
   return (
     <motion.button
       onClick={onClick}
@@ -68,8 +69,15 @@ const CategoryCard = memo(function CategoryCard({ name, icon, image, onClick, on
           {/* Glass separator line */}
           <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/40 dark:via-white/20 to-transparent" />
           
-          <div className="font-medium text-sm sm:text-base text-foreground/90 dark:text-foreground/95 truncate text-start">
-            {name}
+          <div className="space-y-1">
+            <div className="font-medium text-sm sm:text-base text-foreground/90 dark:text-foreground/95 truncate text-start">
+              {name}
+            </div>
+            {itemCount !== undefined && (
+              <div className="text-xs text-muted-foreground">
+                {itemCount} item{itemCount !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
         </div>
       </div>

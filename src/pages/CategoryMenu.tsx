@@ -27,7 +27,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
   const router = useRouter();
   const { lang } = useLang();
   const { addItem } = useCart();
-  const { categories, getCategoryItems } = useData();
+  const { categories, items: allItems, getCategoryItems } = useData();
   const [previewItem, setPreviewItem] = useState<Item | null>(null);
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,10 +92,13 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
   );
 
   // Get items for this category from cache - INSTANT!
-  const items = useMemo(() => 
-    getCategoryItems(categoryId),
-    [getCategoryItems, categoryId]
-  );
+  const items = useMemo(() => {
+    if (categoryId === 'cat-other') {
+      // For "Other" category, get all uncategorized items
+      return allItems.filter(item => !item.category_id && !item.archived_at);
+    }
+    return getCategoryItems(categoryId);
+  }, [getCategoryItems, categoryId, allItems]);
 
   // Search functionality
   const searchResults = useMemo(() => {

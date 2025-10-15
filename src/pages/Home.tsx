@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
 import NavBar from '../components/NavBar';
@@ -6,6 +6,7 @@ import CategoryCard from '../components/CategoryCard';
 import PikoLogoBadge from '../components/PikoLogoBadge';
 import PikoLoader from '../components/PikoLoader';
 import LuckyButton from '../components/LuckyButton';
+import ViewAllItems from '../components/ViewAllItems';
 import { useLang } from '../lib/LangContext';
 import { useData } from '../lib/DataContext';
 import { t, dirFor } from '../lib/i18n';
@@ -13,10 +14,35 @@ import { t, dirFor } from '../lib/i18n';
 const Home = memo(function Home() {
   const router = useRouter();
   const { lang } = useLang();
-  const { categories, loading } = useData(); // Use cached data!
+  const { categories, items, loading } = useData(); // Use cached data!
+
+  // Calculate item counts for each category
+  const itemCounts = useMemo(() => {
+    const counts: { [categoryId: string]: number } = {};
+    
+    categories.forEach(category => {
+      if (category.id === 'cat-other') {
+        // Count uncategorized items
+        counts[category.id] = items.filter(item => !item.category_id && !item.archived_at).length;
+      } else if (category.id === 'cat-view-all') {
+        // Count all items
+        counts[category.id] = items.filter(item => !item.archived_at).length;
+      } else {
+        // Count items in this category
+        counts[category.id] = items.filter(item => item.category_id === category.id && !item.archived_at).length;
+      }
+    });
+    
+    return counts;
+  }, [categories, items]);
 
   const handleCategoryClick = useCallback((categoryId: string) => {
-    router.push(`/category/${categoryId}`);
+    if (categoryId === 'cat-view-all') {
+      // Show ViewAllItems component instead of navigating
+      router.push('/view-all');
+    } else {
+      router.push(`/category/${categoryId}`);
+    }
   }, [router]);
 
   const handleLogoTripleTap = () => {
@@ -88,6 +114,7 @@ const Home = memo(function Home() {
                 name={category.names?.[lang] || category.names?.en || 'Category'}
                 icon={category.icon}
                 image={category.image}
+                itemCount={itemCounts[category.id]}
                 onClick={() => handleCategoryClick(category.id)}
               />
             </motion.div>
