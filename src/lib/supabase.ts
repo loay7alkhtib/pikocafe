@@ -87,20 +87,8 @@ export const categoriesAPI = {
     try {
       let data;
       
-      if (isSupabaseConfigured()) {
-        // Use Supabase client
-        const { data: categories, error } = await supabase
-          .from('categories')
-          .select('*')
-          .is('archived_at', null)
-          .order('order', { ascending: true });
-          
-        if (error) throw error;
-        data = categories || [];
-      } else {
-        // Fallback to API call
-        data = await apiCall('/categories');
-      }
+      // Always use API call since data is accessed through Edge Functions
+      data = await apiCall('/categories');
       
       // Update cache
       categoriesCache = {
@@ -116,29 +104,23 @@ export const categoriesAPI = {
   },
   
   create: async (data: Omit<Category, 'id' | 'created_at'>) => {
-    const result = await apiCall('/categories', {
+    return apiCall('/categories', {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    categoriesCache = null; // Invalidate cache
-    return result;
   },
   
   update: async (id: string, data: Omit<Category, 'id' | 'created_at'>) => {
-    const result = await apiCall(`/categories/${id}`, {
+    return apiCall(`/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    categoriesCache = null; // Invalidate cache
-    return result;
   },
   
   delete: async (id: string) => {
-    const result = await apiCall(`/categories/${id}`, {
+    return apiCall(`/categories/${id}`, {
       method: 'DELETE',
     });
-    categoriesCache = null; // Invalidate cache
-    return result;
   },
 };
 
@@ -149,82 +131,49 @@ export const itemsAPI = {
     return apiCall(`/items${query}`);
   },
   
-  create: (data: Omit<Item, 'id' | 'created_at'>) =>
-    apiCall('/items', {
+  create: (data: Omit<Item, 'id' | 'created_at'>) => {
+    return apiCall('/items', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    });
+  },
   
-  update: (id: string, data: Omit<Item, 'id' | 'created_at'>) =>
-    apiCall(`/items/${id}`, {
+  update: (id: string, data: Omit<Item, 'id' | 'created_at'>) => {
+    return apiCall(`/items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
+    });
+  },
   
-  delete: (id: string) =>
-    apiCall(`/items/${id}`, {
+  delete: (id: string) => {
+    return apiCall(`/items/${id}`, {
       method: 'DELETE',
-    }),
+    });
+  },
   
   archive: async (id: string) => {
-    try {
-      if (isSupabaseConfigured()) {
-        // Use Supabase client for archiving
-        const { error } = await supabaseClient
-          .from('items')
-          .update({ archived_at: new Date().toISOString() })
-          .eq('id', id);
-          
-        if (error) throw error;
-        return { success: true, archived: true };
-      } else {
-        // Fallback to API call
-        return apiCall(`/items/${id}/archive`, {
-          method: 'PATCH',
-        });
-      }
-    } catch (error: any) {
-      console.error('Error archiving item:', error);
-      throw new Error(error.message || 'Failed to archive item');
-    }
+    return apiCall(`/items/${id}`, {
+      method: 'DELETE',
+    });
   },
   
   restore: async (id: string) => {
-    try {
-      if (isSupabaseConfigured()) {
-        // Use Supabase client for restoring
-        const { error } = await supabaseClient
-          .from('items')
-          .update({ archived_at: null })
-          .eq('id', id);
-          
-        if (error) throw error;
-        return { success: true, restored: true };
-      } else {
-        // Fallback to API call
-        return apiCall(`/items/${id}/restore`, {
-          method: 'PATCH',
-        });
-      }
-    } catch (error: any) {
-      console.error('Error restoring item:', error);
-      throw new Error(error.message || 'Failed to restore item');
-    }
+    return apiCall(`/archive/restore/item/${id}`, {
+      method: 'POST',
+    });
   },
   
-  getArchived: () =>
-    apiCall('/items/archived'),
+  getArchived: () => {
+    return apiCall('/archive/items');
+  },
   
-  deleteAll: () =>
-    apiCall('/items/bulk/delete-all', {
-      method: 'DELETE',
-    }),
+  deleteAll: () => {
+    throw new Error('Delete all operation not available - this is a read-only demo');
+  },
   
-  bulkCreate: (items: Omit<Item, 'id' | 'created_at'>[]) =>
-    apiCall('/items/bulk/create', {
-      method: 'POST',
-      body: JSON.stringify({ items }),
-    }),
+  bulkCreate: (items: Omit<Item, 'id' | 'created_at'>[]) => {
+    throw new Error('Bulk create operation not available - this is a read-only demo');
+  },
 };
 
 // Orders API

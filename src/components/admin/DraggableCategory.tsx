@@ -91,9 +91,9 @@ export default function DraggableCategory({
             <div className="text-2xl">{category.icon}</div>
             
             <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{category.names.en}</div>
+              <div className="font-medium truncate">{category.names?.en || 'Category'}</div>
               <div className="text-sm text-muted-foreground truncate">
-                {category.names.tr} • {category.names.ar}
+                {category.names?.tr || 'Category'} • {category.names?.ar || 'Category'}
               </div>
             </div>
 

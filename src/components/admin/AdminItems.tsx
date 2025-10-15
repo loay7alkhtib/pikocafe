@@ -56,12 +56,15 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
 
   // Update local items when props change
   useEffect(() => {
-    setLocalItems([...items].sort((a, b) => (a.order || 0) - (b.order || 0)));
+    setLocalItems([...items].filter(item => item != null).sort((a, b) => (a.order || 0) - (b.order || 0)));
   }, [items]);
 
   // Filter items by selected category
   // Filter items by category, search query, and archive status
   const filteredItems = localItems.filter(item => {
+    // Skip null/undefined items
+    if (!item) return false;
+    
     // Archive filter
     const archiveMatch = showArchived ? item.archived_at : !item.archived_at;
     
@@ -73,7 +76,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     
     const query = searchQuery.toLowerCase().trim();
     const searchMatch = 
-      item.names.en.toLowerCase().includes(query) ||
+      item.names?.en?.toLowerCase().includes(query) ||
       item.names.tr?.toLowerCase().includes(query) ||
       item.names.ar?.toLowerCase().includes(query) ||
       item.tags?.some(tag => tag.toLowerCase().includes(query));
@@ -86,9 +89,9 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     if (item) {
       setEditingId(item.id);
       setFormData({
-        nameEn: item.names.en,
-        nameTr: item.names.tr,
-        nameAr: item.names.ar,
+        nameEn: item.names?.en || 'Item',
+        nameTr: item.names?.tr || 'Item',
+        nameAr: item.names?.ar || 'Item',
         categoryId: item.category_id || '',
         price: item.price,
         image: item.image || '',
@@ -152,7 +155,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
 
   const handleArchive = async (id: string) => {
     const item = localItems.find(item => item.id === id);
-    const itemName = item ? (item.names[lang] || item.names.en || 'this item') : 'this item';
+    const itemName = item ? (item.names?.[lang] || item.names?.en || 'this item') : 'this item';
     
     if (!confirm(`📦 Archive "${itemName}"? You can recover it later from the archive.`)) return;
 
@@ -187,7 +190,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
       );
 
       const newCategory = categories.find(cat => cat.id === newCategoryId);
-      const categoryName = newCategory ? (newCategory.names[lang] || newCategory.names.en) : 'Unknown';
+      const categoryName = newCategory ? (newCategory.names?.[lang] || newCategory.names?.en) : 'Unknown';
       
       toast.success(`Item moved to "${categoryName}" category`);
     } catch (error: any) {
@@ -282,7 +285,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
             All ({items.length})
           </Badge>
           {categories.map((cat) => {
-            const count = items.filter(item => item.category_id === cat.id).length;
+            const count = items.filter(item => item && item.category_id === cat.id).length;
             return (
               <Badge
                 key={cat.id}
@@ -290,7 +293,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
                 className="cursor-pointer"
                 onClick={() => setSelectedCategory(cat.id)}
               >
-                {cat.icon} {cat.names.en} ({count})
+                {cat.icon} {cat.names?.en || 'Category'} ({count})
               </Badge>
             );
           })}
@@ -392,7 +395,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
                 <SelectContent>
                   {categories.map(cat => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.icon} {cat.names.en}
+                      {cat.icon} {cat.names?.en || 'Category'}
                     </SelectItem>
                   ))}
                 </SelectContent>

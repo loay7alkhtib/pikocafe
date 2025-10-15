@@ -73,7 +73,7 @@ export function AutoProcessMenu({ onComplete }: AutoProcessMenuProps = {}) {
 
     items.forEach(item => {
       // Create unique key based on English name + category
-      const key = `${item.names.en.toLowerCase().trim()}_${item.category_id}`;
+      const key = `${(item.names?.en || 'item').toLowerCase().trim()}_${item.category_id}`;
       
       if (!grouped.has(key)) {
         // First occurrence - create base item
@@ -100,11 +100,11 @@ export function AutoProcessMenu({ onComplete }: AutoProcessMenuProps = {}) {
           // Determine size name from Arabic suffix or default to price-based name
           let sizeName = '';
           
-          if (item.names.ar.includes('وسط')) {
+          if (item.names?.ar?.includes('وسط')) {
             sizeName = 'Medium';
-          } else if (item.names.ar.includes('كبير')) {
+          } else if (item.names?.ar?.includes('كبير')) {
             sizeName = 'Large';
-          } else if (item.names.ar.includes('دبل') || item.names.ar.includes('Double')) {
+          } else if (item.names?.ar?.includes('دبل') || item.names?.ar?.includes('Double')) {
             sizeName = 'Double';
           } else if (item.variants && item.variants.length > 0) {
             sizeName = item.variants[0].size;
@@ -219,7 +219,7 @@ export function AutoProcessMenu({ onComplete }: AutoProcessMenuProps = {}) {
 
           if (!response.ok) {
             const errorText = await response.text();
-            addLog(`❌ Failed to upload "${item.names.en}": ${errorText}`);
+            addLog(`❌ Failed to upload "${item.names?.en || 'Item'}": ${errorText}`);
             errorCount++;
           } else {
             uploadedCount++;
@@ -228,7 +228,7 @@ export function AutoProcessMenu({ onComplete }: AutoProcessMenuProps = {}) {
             }
           }
         } catch (err) {
-          addLog(`❌ Error uploading "${item.names.en}": ${err}`);
+          addLog(`❌ Error uploading "${item.names?.en || 'Item'}": ${err}`);
           errorCount++;
         }
 

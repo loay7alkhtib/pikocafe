@@ -79,9 +79,9 @@ export default function AdminCategories({ categories, onRefresh }: AdminCategori
     if (category) {
       setEditingId(category.id);
       setFormData({
-        nameEn: category.names.en,
-        nameTr: category.names.tr,
-        nameAr: category.names.ar,
+        nameEn: category.names?.en || 'Category',
+        nameTr: category.names?.tr || 'Category',
+        nameAr: category.names?.ar || 'Category',
         icon: category.icon,
         image: category.image || '',
         order: category.order,
@@ -133,7 +133,7 @@ export default function AdminCategories({ categories, onRefresh }: AdminCategori
 
   const handleDelete = async (id: string) => {
     const category = localCategories.find(cat => cat.id === id);
-    const categoryName = category ? (category.names[lang] || category.names.en || 'this category') : 'this category';
+    const categoryName = category ? (category.names?.[lang] || category.names?.en || 'this category') : 'this category';
     
     if (!confirm(`⚠️ Are you sure you want to delete "${categoryName}"? This will also delete all items in this category. This action cannot be undone.`)) return;
 

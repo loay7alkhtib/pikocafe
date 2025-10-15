@@ -60,7 +60,7 @@ const VirtualizedItemGrid = memo(function VirtualizedItemGrid({
           transition={{ duration: 0.3, delay: Math.min(itemIndex * 0.02, 0.2) }}
         >
           <ItemCard
-            name={item.names[lang] || item.names.en}
+            name={item.names?.[lang] || item.names?.en || 'Item'}
             price={item.price}
             image={item.image}
             tags={item.tags}

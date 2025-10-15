@@ -138,29 +138,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Load data on mount
   useEffect(() => {
-    // Check server health first, then fetch data
+    // Fetch data directly
     const initData = async () => {
-      try {
-        console.log('🏥 Checking server health...');
-        const healthCheck = await fetch(
-          `https://${await import('../utils/supabase/info').then(m => m.projectId)}.supabase.co/functions/v1/make-server-4050140e/health`,
-          {
-            headers: {
-              'Authorization': `Bearer ${await import('../utils/supabase/info').then(m => m.publicAnonKey)}`,
-            },
-          }
-        ).catch(() => null);
-        
-        if (healthCheck && healthCheck.ok) {
-          console.log('✅ Server is healthy');
-        } else {
-          console.warn('⚠️ Server health check failed');
-        }
-      } catch (err) {
-        console.warn('⚠️ Could not check server health:', err);
-      }
-      
-      // Fetch data regardless of health check
+      console.log('🚀 Starting data fetch...');
       await fetchAllData();
     };
     

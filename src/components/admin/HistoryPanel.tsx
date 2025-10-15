@@ -120,7 +120,7 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
         throw new Error('Failed to restore item');
       }
 
-      toast.success(`Restored "${item.names.en}"`);
+      toast.success(`Restored "${item.names?.en || 'Item'}"`);
       await loadArchived();
       if (onRestore) onRestore();
     } catch (error) {
@@ -148,7 +148,7 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
         throw new Error('Failed to restore category');
       }
 
-      toast.success(`Restored "${category.names.en}"`);
+      toast.success(`Restored "${category.names?.en || 'Category'}"`);
       await loadArchived();
       if (onRestore) onRestore();
     } catch (error) {
@@ -279,15 +279,15 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
                   {item.image && (
                     <img
                       src={item.image}
-                      alt={item.names.en}
+                      alt={item.names?.en || 'Item'}
                       className="w-16 h-16 rounded-lg object-cover"
                     />
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <h3 className="font-medium truncate">{item.names.en}</h3>
-                        <p className="text-sm text-gray-600">{item.names.tr} • {item.names.ar}</p>
+                        <h3 className="font-medium truncate">{item.names?.en || 'Item'}</h3>
+                        <p className="text-sm text-gray-600">{item.names?.tr || 'Item'} • {item.names?.ar || 'Item'}</p>
                       </div>
                       <Badge variant="outline" className="flex-shrink-0">
                         {item.price} TL
@@ -319,7 +319,7 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => permanentlyDelete('item', item.id, item.names.en)}
+                        onClick={() => permanentlyDelete('item', item.id, item.names?.en || 'Item')}
                       >
                         <Trash2 className="h-3 w-3 mr-1" />
                         Delete Forever
@@ -346,8 +346,8 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h3 className="font-medium">{category.names.en}</h3>
-                        <p className="text-sm text-gray-600">{category.names.tr} • {category.names.ar}</p>
+                        <h3 className="font-medium">{category.names?.en || 'Category'}</h3>
+                        <p className="text-sm text-gray-600">{category.names?.tr || 'Category'} • {category.names?.ar || 'Category'}</p>
                       </div>
                     </div>
                     
@@ -371,7 +371,7 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => permanentlyDelete('category', category.id, category.names.en)}
+                        onClick={() => permanentlyDelete('category', category.id, category.names?.en || 'Category')}
                       >
                         <Trash2 className="h-3 w-3 mr-1" />
                         Delete Forever

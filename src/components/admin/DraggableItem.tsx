@@ -52,7 +52,7 @@ export default function DraggableItem({
         {item.image ? (
           <ImageWithFallback
             src={item.image}
-            alt={item.names.en}
+            alt={item.names?.en || 'Item'}
             className="w-12 h-12 rounded object-cover"
           />
         ) : (
@@ -62,13 +62,13 @@ export default function DraggableItem({
         )}
       </TableCell>
       <TableCell>
-        <div className="font-medium">{item.names.en}</div>
+        <div className="font-medium">{item.names?.en || 'Item'}</div>
         <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-          {item.names.tr}
+          {item.names?.tr || 'Item'}
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        <div className="text-sm truncate max-w-[150px]">{item.names.ar}</div>
+        <div className="text-sm truncate max-w-[150px]">{item.names?.ar || 'Item'}</div>
       </TableCell>
       <TableCell className="font-medium">{item.price} TL</TableCell>
       <TableCell className="hidden lg:table-cell">
@@ -81,7 +81,7 @@ export default function DraggableItem({
               <SelectContent>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.names.en}
+                    {cat.icon} {cat.names?.en || 'Category'}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -111,7 +111,7 @@ export default function DraggableItem({
           >
             {category && (
               <Badge variant="outline" className="group-hover:bg-primary/10 group-hover:border-primary/50 transition-colors">
-                {category.icon} {category.names.en}
+                {category.icon} {category.names?.en || 'Category'}
               </Badge>
             )}
           </div>

@@ -16,6 +16,10 @@ const AdminCategories = lazy(() => import('../components/admin/AdminCategories')
 const AdminItems = lazy(() => import('../components/admin/AdminItems'));
 const AdminOrders = lazy(() => import('../components/admin/AdminOrders'));
 const HistoryPanelComponent = lazy(() => import('../components/admin/HistoryPanel').then(module => ({ default: module.HistoryPanel })));
+const AutoCleanup = lazy(() => import('../components/admin/AutoCleanup'));
+const CategoryReassigner = lazy(() => import('../components/admin/CategoryReassigner'));
+const ArchiveCleaner = lazy(() => import('../components/admin/ArchiveCleaner'));
+const SizeVariantMerger = lazy(() => import('../components/admin/SizeVariantMerger'));
 
 const Admin = memo(function Admin() {
   const router = useRouter();
@@ -150,7 +154,7 @@ const Admin = memo(function Admin() {
         <Tabs defaultValue="categories" className="w-full">
           {/* Simplified Tab Navigation */}
               <div className="flex justify-center mb-8">
-                <TabsList className="grid w-full max-w-lg grid-cols-4">
+                <TabsList className="grid w-full max-w-2xl grid-cols-5">
                   <TabsTrigger value="categories" className="text-sm">
                     Categories
                   </TabsTrigger>
@@ -159,6 +163,9 @@ const Admin = memo(function Admin() {
                   </TabsTrigger>
                   <TabsTrigger value="orders" className="text-sm">
                     Orders
+                  </TabsTrigger>
+                  <TabsTrigger value="tools" className="text-sm">
+                    Tools
                   </TabsTrigger>
                   <TabsTrigger value="archive" className="text-sm">
                     Archive
@@ -213,6 +220,37 @@ const Admin = memo(function Admin() {
                     orders={orders}
                     onRefresh={loadOrders}
                   />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="tools" className="mt-0">
+                <Suspense fallback={
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                      <p className="text-sm text-muted-foreground">Loading tools...</p>
+                    </div>
+                  </div>
+                }>
+                  <div className="space-y-6">
+                    <AutoCleanup
+                      items={items}
+                      categories={categories}
+                      onRefresh={handleRefresh}
+                    />
+                    <CategoryReassigner
+                      items={items}
+                      categories={categories}
+                      onRefresh={handleRefresh}
+                    />
+                    <SizeVariantMerger
+                      items={items}
+                      onRefresh={handleRefresh}
+                    />
+                    <ArchiveCleaner
+                      onRefresh={handleRefresh}
+                    />
+                  </div>
                 </Suspense>
               </TabsContent>
 

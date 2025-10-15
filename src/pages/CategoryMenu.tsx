@@ -103,7 +103,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
     
     const query = searchQuery.toLowerCase().trim();
     return items.filter(item => 
-      item.names.en.toLowerCase().includes(query) ||
+      item.names?.en?.toLowerCase().includes(query) ||
       item.names.tr?.toLowerCase().includes(query) ||
       item.names.ar?.toLowerCase().includes(query) ||
       item.tags?.some(tag => tag.toLowerCase().includes(query))
@@ -125,7 +125,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
     
     addItem({
       id: item.id,
-      name: item.names[lang] || item.names.en,
+      name: item.names?.[lang] || item.names?.en || 'Item',
       price: displayPrice,
       image: item.image || undefined,
       size,
@@ -176,7 +176,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
                   >
                     <span className="text-lg sm:text-xl">{cat.icon}</span>
                     <span className="text-xs sm:text-sm whitespace-nowrap">
-                      {cat.names[lang] || cat.names.en}
+                      {cat.names?.[lang] || cat.names?.en || 'Category'}
                     </span>
                   </button>
                 ))}
@@ -189,7 +189,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
           <div className="mb-6 sm:mb-8 text-center">
             <div className="text-4xl sm:text-5xl mb-2 sm:mb-3">{category.icon}</div>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-medium px-4">
-              {category.names[lang] || category.names.en}
+              {category.names?.[lang] || category.names?.en || 'Category'}
             </h2>
           </div>
         )}
@@ -258,7 +258,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
                     transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.2) }}
                   >
                     <ItemCard
-                      name={item.names[lang] || item.names.en}
+                      name={item.names?.[lang] || item.names?.en || 'Item'}
                       price={item.price}
                       image={item.image}
                       tags={item.tags}
@@ -300,7 +300,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
                 transition={{ duration: 0.3, delay: Math.min(index * 0.02, 0.2) }}
               >
                 <ItemCard
-                  name={item.names[lang] || item.names.en}
+                  name={item.names?.[lang] || item.names?.en || 'Item'}
                   price={item.price}
                   image={item.image}
                   tags={item.tags}
@@ -352,7 +352,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
                 transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
               >
                 <CategoryCard
-                  name={cat.names[lang] || cat.names.en}
+                  name={cat.names?.[lang] || cat.names?.en || 'Category'}
                   icon={cat.icon}
                   image={cat.image}
                   onClick={() => router.push(`/category/${cat.id}`)}
@@ -384,7 +384,7 @@ const CategoryMenu = memo(function CategoryMenu({ categoryId }: CategoryMenuProp
         items={isSearching ? searchResults : items}
         currentIndex={previewItem ? (isSearching ? searchResults.findIndex(item => item.id === previewItem.id) : items.findIndex(item => item.id === previewItem.id)) : 0}
         onAdd={(size, price) => previewItem && handleAddItem(previewItem, size, price)}
-        categoryName={category ? (category.names[lang] || category.names.en) : undefined}
+        categoryName={category ? (category.names?.[lang] || category.names?.en || 'Category') : undefined}
       />
     </div>
   );

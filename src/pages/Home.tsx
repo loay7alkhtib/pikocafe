@@ -85,7 +85,7 @@ const Home = memo(function Home() {
               transition={{ duration: 0.2, delay: Math.min(index * 0.03, 0.3) }}
             >
               <CategoryCard
-                name={category.names[lang] || category.names.en}
+                name={category.names?.[lang] || category.names?.en || 'Category'}
                 icon={category.icon}
                 image={category.image}
                 onClick={() => handleCategoryClick(category.id)}

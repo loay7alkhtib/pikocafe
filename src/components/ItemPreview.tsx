@@ -122,7 +122,7 @@ const ItemPreview = memo(function ItemPreview({
   
   if (!currentItem) return null;
 
-  const itemName = currentItem.names[lang] || currentItem.names.en;
+  const itemName = currentItem.names?.[lang] || currentItem.names?.en || 'Item';
   const hasVariants = currentItem.variants && currentItem.variants.length > 0;
   
   // Get price based on selected size
