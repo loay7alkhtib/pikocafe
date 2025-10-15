@@ -1,11 +1,11 @@
 // Supabase Configuration
 // Replace these values with your actual Supabase project details
 
-export const projectId = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID || 'your-project-id';
+export const projectId = process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID || 'lnpgrvtobvrxzqvtlwzz';
 export const publicAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'your-anon-key-here';
 
 // Supabase URL
-export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || `https://${projectId}.supabase.co`;
+export const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lnpgrvtobvrxzqvtlwzz.supabase.co';
 
 // Instructions for setup:
 // 1. Go to your Supabase dashboard: https://supabase.com/dashboard
