@@ -1,7 +1,7 @@
 // Debug utility for diagnosing connection issues
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 
-const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-4050140e`;
+const API_BASE = '/api';
 
 export async function diagnoseConnection() {
   console.log('🔍 Running connection diagnostics...');

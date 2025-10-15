@@ -14,16 +14,12 @@ export default function HomePage() {
 
   async function initializeDatabase() {
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-4050140e/init-db`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${publicAnonKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
+      const response = await fetch('/api/init-categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
       
       const data = await response.json()
       console.log('Database initialization:', data)

@@ -67,24 +67,10 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
     setLoading(true);
     try {
       // Fetch archived items
-      const itemsResponse = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-4050140e/archive/items`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
+      const itemsResponse = await fetch('/api/archive/items');
 
       // Fetch archived categories
-      const categoriesResponse = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-4050140e/archive/categories`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
+      const categoriesResponse = await fetch('/api/archive/categories');
 
       if (itemsResponse.ok) {
         const items = await itemsResponse.json();
@@ -106,15 +92,12 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
   const restoreItem = async (item: ArchivedItem) => {
     setRestoring(item.id);
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-4050140e/archive/restore/item/${item.id}`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
+      const response = await fetch(`/api/archive/restore/item/${item.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Failed to restore item');
@@ -134,15 +117,12 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
   const restoreCategory = async (category: ArchivedCategory) => {
     setRestoring(category.id);
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-4050140e/archive/restore/category/${category.id}`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
+      const response = await fetch(`/api/archive/restore/category/${category.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Failed to restore category');
@@ -165,15 +145,12 @@ export function HistoryPanel({ onRestore }: HistoryPanelProps) {
     }
 
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-4050140e/archive/${type}/${id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
+      const response = await fetch(`/api/archive/${type}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         throw new Error('Failed to permanently delete');

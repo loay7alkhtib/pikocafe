@@ -205,17 +205,13 @@ export function AutoProcessMenu({ onComplete }: AutoProcessMenuProps = {}) {
         setProgress(progressPercent);
 
         try {
-          const response = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/make-server-4050140e/items`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${publicAnonKey}`,
-              },
-              body: JSON.stringify(item),
-            }
-          );
+          const response = await fetch('/api/items', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(item),
+          });
 
           if (!response.ok) {
             const errorText = await response.text();
