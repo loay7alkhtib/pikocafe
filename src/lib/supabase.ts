@@ -1,6 +1,6 @@
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { saveSession, loadSession, clearSession, hasSession } from './sessionManager';
-import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { supabase as supabaseClient, isSupabaseConfigured } from './supabaseClient';
 
 // Simple auth state management
 let currentSession: { 
@@ -170,7 +170,7 @@ export const itemsAPI = {
     try {
       if (isSupabaseConfigured()) {
         // Use Supabase client for archiving
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('items')
           .update({ archived_at: new Date().toISOString() })
           .eq('id', id);
@@ -193,7 +193,7 @@ export const itemsAPI = {
     try {
       if (isSupabaseConfigured()) {
         // Use Supabase client for restoring
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('items')
           .update({ archived_at: null })
           .eq('id', id);
