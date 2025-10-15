@@ -25,10 +25,6 @@ const Admin = memo(function Admin() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<Order[]>([]);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
   const checkAuth = useCallback(async () => {
     try {
       console.log('🔍 Checking admin session...');
@@ -52,6 +48,10 @@ const Admin = memo(function Admin() {
       setLoading(false);
     }
   }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   async function loadOrders() {
     try {
