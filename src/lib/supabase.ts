@@ -88,7 +88,7 @@ export const categoriesAPI = {
       let data;
       
       // Use local API route for better reliability
-      data = await apiCall('/api/categories');
+      data = await apiCall('/categories');
       
       // Update cache
       categoriesCache = {
@@ -104,21 +104,21 @@ export const categoriesAPI = {
   },
   
   create: async (data: Omit<Category, 'id' | 'created_at'>) => {
-    return apiCall('/api/categories', {
+    return apiCall('/categories', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
   
   update: async (id: string, data: Omit<Category, 'id' | 'created_at'>) => {
-    return apiCall(`/api/categories/${id}`, {
+    return apiCall(`/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
   
   delete: async (id: string) => {
-    return apiCall(`/api/categories/${id}`, {
+    return apiCall(`/categories/${id}`, {
       method: 'DELETE',
     });
   },
@@ -128,25 +128,25 @@ export const categoriesAPI = {
 export const itemsAPI = {
   getAll: (categoryId?: string) => {
     const query = categoryId ? `?category_id=${categoryId}` : '';
-    return apiCall(`/api/items${query}`);
+    return apiCall(`/items${query}`);
   },
   
   create: (data: Omit<Item, 'id' | 'created_at'>) => {
-    return apiCall('/api/items', {
+    return apiCall('/items', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
   
   update: (id: string, data: Omit<Item, 'id' | 'created_at'>) => {
-    return apiCall(`/api/items/${id}`, {
+    return apiCall(`/items/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   },
   
   delete: (id: string) => {
-    return apiCall(`/api/items/${id}`, {
+    return apiCall(`/items/${id}`, {
       method: 'DELETE',
     });
   },
