@@ -19,6 +19,7 @@ const HistoryPanelComponent = lazy(() => import('../components/admin/HistoryPane
 const ItemReorganizer = lazy(() => import('../components/admin/ItemReorganizer').then(module => ({ default: module.ItemReorganizer })));
 const ArchiveCleaner = lazy(() => import('../components/admin/ArchiveCleaner').then(module => ({ default: module.ArchiveCleaner })));
 const SmartCategorizer = lazy(() => import('../components/admin/SmartCategorizer'));
+const DiagnosticTool = lazy(() => import('../components/DiagnosticTool'));
 
 const Admin = memo(function Admin() {
   const router = useRouter();
@@ -150,10 +151,13 @@ const Admin = memo(function Admin() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="categories" className="w-full">
+        <Tabs defaultValue="diagnostics" className="w-full">
           {/* Simplified Tab Navigation */}
               <div className="flex justify-center mb-8">
-                <TabsList className="grid w-full max-w-4xl grid-cols-6">
+                <TabsList className="grid w-full max-w-5xl grid-cols-7">
+                  <TabsTrigger value="diagnostics" className="text-sm">
+                    Diagnostics
+                  </TabsTrigger>
                   <TabsTrigger value="categories" className="text-sm">
                     Categories
                   </TabsTrigger>
@@ -176,6 +180,19 @@ const Admin = memo(function Admin() {
               </div>
 
           {/* Tab Contents */}
+          <TabsContent value="diagnostics" className="mt-0">
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-4">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-sm text-muted-foreground">Loading diagnostics...</p>
+                </div>
+              </div>
+            }>
+              <DiagnosticTool />
+            </Suspense>
+          </TabsContent>
+
           <TabsContent value="categories" className="mt-0">
             <Suspense fallback={
               <div className="flex items-center justify-center py-12">
