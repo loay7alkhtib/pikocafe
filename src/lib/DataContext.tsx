@@ -79,24 +79,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
         console.warn('⚠️ No categories found. Database might need initialization.');
       }
 
-      // Sort categories by order field
+      // Sort categories by order field (guard against nulls)
       const sortedCategories = Array.isArray(categoriesData) 
-        ? [...categoriesData].sort((a, b) => (a.order || 0) - (b.order || 0))
+        ? [...categoriesData]
+            .filter((c) => c != null)
+            .sort((a, b) => (a?.order || 0) - (b?.order || 0))
         : [];
       
       // Ensure items have order field and sort by order field within their categories
       const sortedItems = Array.isArray(itemsData) 
         ? [...itemsData]
+            // Guard against null/undefined entries
+            .filter((item) => item != null)
             // First, ensure all items have an order field
             .map((item, index) => ({
               ...item,
-              order: item.order ?? index
+              order: (item as any).order ?? index
             }))
             // Then sort by category order and item order
             .sort((a, b) => {
               // First sort by category order, then by item order within category
-              const categoryA = sortedCategories.find(cat => cat.id === a.category_id);
-              const categoryB = sortedCategories.find(cat => cat.id === b.category_id);
+              const categoryA = sortedCategories.find(cat => cat?.id === a?.category_id);
+              const categoryB = sortedCategories.find(cat => cat?.id === b?.category_id);
               
               if (categoryA && categoryB) {
                 const categoryOrderDiff = (categoryA.order || 0) - (categoryB.order || 0);
@@ -104,7 +108,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
               }
               
               // If same category or no category, sort by item order
-              return (a.order || 0) - (b.order || 0);
+              return ((a?.order as number) || 0) - ((b?.order as number) || 0);
             })
         : [];
       
@@ -158,8 +162,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     
     const categoryItems = items
-      .filter(item => item.category_id === categoryId)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
+      .filter(item => item && item.category_id === categoryId)
+      .sort((a, b) => ((a?.order as number) || 0) - ((b?.order as number) || 0));
     
     // Cache for 2 minutes
     performanceCache.set(cacheKey, categoryItems, 2 * 60 * 1000);

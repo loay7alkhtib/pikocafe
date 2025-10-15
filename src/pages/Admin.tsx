@@ -16,6 +16,9 @@ const AdminCategories = lazy(() => import('../components/admin/AdminCategories')
 const AdminItems = lazy(() => import('../components/admin/AdminItems'));
 const AdminOrders = lazy(() => import('../components/admin/AdminOrders'));
 const HistoryPanelComponent = lazy(() => import('../components/admin/HistoryPanel').then(module => ({ default: module.HistoryPanel })));
+const ItemReorganizer = lazy(() => import('../components/admin/ItemReorganizer').then(module => ({ default: module.ItemReorganizer })));
+const ArchiveCleaner = lazy(() => import('../components/admin/ArchiveCleaner').then(module => ({ default: module.ArchiveCleaner })));
+const SmartCategorizer = lazy(() => import('../components/admin/SmartCategorizer'));
 
 const Admin = memo(function Admin() {
   const router = useRouter();
@@ -150,15 +153,21 @@ const Admin = memo(function Admin() {
         <Tabs defaultValue="categories" className="w-full">
           {/* Simplified Tab Navigation */}
               <div className="flex justify-center mb-8">
-                <TabsList className="grid w-full max-w-2xl grid-cols-4">
+                <TabsList className="grid w-full max-w-4xl grid-cols-6">
                   <TabsTrigger value="categories" className="text-sm">
                     Categories
                   </TabsTrigger>
                   <TabsTrigger value="items" className="text-sm">
                     Menu Items
                   </TabsTrigger>
+                  <TabsTrigger value="smart-categorizer" className="text-sm">
+                    Smart AI
+                  </TabsTrigger>
                   <TabsTrigger value="orders" className="text-sm">
                     Orders
+                  </TabsTrigger>
+                  <TabsTrigger value="reorganize" className="text-sm">
+                    Reorganize
                   </TabsTrigger>
                   <TabsTrigger value="archive" className="text-sm">
                     Archive
@@ -200,6 +209,23 @@ const Admin = memo(function Admin() {
             </Suspense>
           </TabsContent>
 
+          <TabsContent value="smart-categorizer" className="mt-0">
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-4">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                  <p className="text-sm text-muted-foreground">Loading Smart Categorizer...</p>
+                </div>
+              </div>
+            }>
+              <SmartCategorizer
+                categories={categories}
+                items={items}
+                onRefresh={handleRefresh}
+              />
+            </Suspense>
+          </TabsContent>
+
               <TabsContent value="orders" className="mt-0">
                 <Suspense fallback={
                   <div className="flex items-center justify-center py-12">
@@ -216,6 +242,21 @@ const Admin = memo(function Admin() {
                 </Suspense>
               </TabsContent>
 
+              <TabsContent value="reorganize" className="mt-0">
+                <Suspense fallback={
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                      <p className="text-sm text-muted-foreground">Loading reorganizer...</p>
+                    </div>
+                  </div>
+                }>
+                  <div className="space-y-8">
+                    <ItemReorganizer onComplete={handleRefresh} />
+                    <ArchiveCleaner onComplete={handleRefresh} />
+                  </div>
+                </Suspense>
+              </TabsContent>
 
               <TabsContent value="archive" className="mt-0">
                 <Suspense fallback={

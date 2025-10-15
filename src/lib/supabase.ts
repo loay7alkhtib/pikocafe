@@ -167,6 +167,21 @@ export const itemsAPI = {
     return apiCall('/archive/items');
   },
   
+  // Permanently delete a single archived item
+  deleteArchived: (id: string) => {
+    return apiCall(`/archive/item/${id}`, {
+      method: 'DELETE',
+    });
+  },
+  
+  // Fast server-side bulk deletion of archived items
+  deleteArchivedBulk: (ids?: string[]) => {
+    return apiCall('/archive/delete-bulk', {
+      method: 'POST',
+      body: JSON.stringify({ ids }),
+    });
+  },
+  
   deleteAll: () => {
     throw new Error('Delete all operation not available - this is a read-only demo');
   },

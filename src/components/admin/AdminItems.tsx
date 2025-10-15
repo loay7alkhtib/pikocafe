@@ -24,7 +24,7 @@ import { useLang } from '../../lib/LangContext';
 import { t } from '../../lib/i18n';
 import { itemsAPI, Category, Item } from '../../lib/supabase';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Filter, X, Info, Search, Archive } from 'lucide-react';
+import { Plus, Edit, Trash2, Filter, X, Info, Search, Archive, CheckSquare, Square, MoveRight } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
@@ -42,6 +42,12 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
   const [localItems, setLocalItems] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+  
+  // Bulk editing state
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [bulkEditMode, setBulkEditMode] = useState(false);
+  const [bulkCategoryDialogOpen, setBulkCategoryDialogOpen] = useState(false);
+  const [bulkTargetCategory, setBulkTargetCategory] = useState<string>('');
   const [formData, setFormData] = useState({
     nameEn: '',
     nameTr: '',

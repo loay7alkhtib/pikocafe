@@ -1094,6 +1094,71 @@ app.get("/make-server-4050140e/archive/items", async (c) => {
   }
 });
 
+// Bulk permanently delete archived items (fast, server-side)
+app.post("/make-server-4050140e/archive/delete-bulk", async (c) => {
+  try {
+    // Optional body: { ids: string[] }
+    let idsFromBody: string[] | undefined = undefined;
+    try {
+      const body = await c.req.json();
+      if (body && Array.isArray(body.ids)) idsFromBody = body.ids;
+    } catch (_) {
+      // ignore parse errors; treat as delete all archived
+    }
+
+    // Determine targets
+    const archiveIds: string[] = await kv.get("piko:archive-item-ids") || [];
+    const targetIds: string[] = idsFromBody && idsFromBody.length > 0
+      ? archiveIds.filter((id: string) => idsFromBody!.includes(id))
+      : archiveIds;
+
+    if (targetIds.length === 0) {
+      return c.json({ deleted: 0, errors: 0, total: 0, message: "No archived items to delete" });
+    }
+
+    // Concurrency-limited deletions
+    const maxConcurrency = 64;
+    let idx = 0;
+    let active = 0;
+    let deleted = 0;
+    let errors = 0;
+
+    await new Promise<void>((resolve) => {
+      const next = () => {
+        if (idx >= targetIds.length && active === 0) return resolve();
+        while (active < maxConcurrency && idx < targetIds.length) {
+          const id = targetIds[idx++];
+          active++;
+          (async () => {
+            try {
+              // Delete archived record
+              await kv.del(`piko:archive:item:${id}`);
+              deleted++;
+            } catch (_) {
+              errors++;
+            } finally {
+              active--;
+              next();
+            }
+          })();
+        }
+      };
+      next();
+    });
+
+    // Update archive index to remove deleted ids
+    if (deleted > 0) {
+      const remaining = archiveIds.filter((aid: string) => !targetIds.includes(aid));
+      await kv.set("piko:archive-item-ids", remaining);
+    }
+
+    return c.json({ deleted, errors, total: targetIds.length });
+  } catch (error: any) {
+    console.error("Bulk archive delete error:", error);
+    return c.json({ error: error.message || "Bulk delete failed" }, 500);
+  }
+});
+
 // Get all archived categories
 app.get("/make-server-4050140e/archive/categories", async (c) => {
   try {

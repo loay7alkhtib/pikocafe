@@ -42,7 +42,11 @@ export default function AdminCategories({ categories, onRefresh }: AdminCategori
 
   // Update local categories when props change
   useEffect(() => {
-    setLocalCategories([...categories].sort((a, b) => a.order - b.order));
+    setLocalCategories(
+      [...categories]
+        .filter((c) => c != null)
+        .sort((a, b) => (a?.order || 0) - (b?.order || 0))
+    );
   }, [categories]);
 
   const moveCategory = useCallback(async (dragIndex: number, hoverIndex: number) => {
