@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { categoriesAPI, itemsAPI, Category, Item } from './supabase';
+import { Category, Item } from './supabase';
+import { hybridCategoriesAPI, hybridItemsAPI } from './hybridAPI';
 import { performanceCache, debounce } from './PerformanceCache';
 import './debug'; // Load diagnostics tool
 
@@ -41,8 +42,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setTimeout(async () => {
           try {
             const [freshCategories, freshItems] = await Promise.all([
-              categoriesAPI.getAll(),
-              itemsAPI.getAll()
+              hybridCategoriesAPI.getAll(),
+              hybridItemsAPI.getAll()
             ]);
             
             // Update cache and state with fresh data
@@ -62,11 +63,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       // Try to fetch categories and items in parallel with minimum loading time
       const [categoriesData, itemsData] = await Promise.all([
-        categoriesAPI.getAll().catch(err => {
+        hybridCategoriesAPI.getAll().catch(err => {
           console.error('Categories fetch error:', err);
           return [];
         }),
-        itemsAPI.getAll().catch(err => {
+        hybridItemsAPI.getAll().catch(err => {
           console.error('Items fetch error:', err);
           return [];
         }),

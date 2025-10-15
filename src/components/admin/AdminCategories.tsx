@@ -16,7 +16,8 @@ import {
 } from '../ui/dialog';
 import { useLang } from '../../lib/LangContext';
 import { t } from '../../lib/i18n';
-import { categoriesAPI, Category } from '../../lib/supabase';
+import { Category } from '../../lib/supabase';
+import { hybridCategoriesAPI } from '../../lib/hybridAPI';
 import { toast } from 'sonner';
 import { Plus, Info } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -67,7 +68,7 @@ export default function AdminCategories({ categories, onRefresh }: AdminCategori
       
       // Save all updates
       await Promise.all(
-        updates.map((cat) => categoriesAPI.update(cat.id, { ...cat, order: cat.order }))
+        updates.map((cat) => hybridCategoriesAPI.update(cat.id, { ...cat, order: cat.order }))
       );
       
       toast.success('Order updated');
@@ -120,10 +121,10 @@ export default function AdminCategories({ categories, onRefresh }: AdminCategori
       console.log('Saving category with image:', formData.image ? 'Yes (length: ' + formData.image.length + ')' : 'No');
 
       if (editingId) {
-        await categoriesAPI.update(editingId, data);
+        await hybridCategoriesAPI.update(editingId, data);
         toast.success('Category updated');
       } else {
-        await categoriesAPI.create(data);
+        await hybridCategoriesAPI.create(data);
         toast.success('Category created');
       }
 
@@ -142,7 +143,7 @@ export default function AdminCategories({ categories, onRefresh }: AdminCategori
     if (!confirm(`⚠️ Are you sure you want to delete "${categoryName}"? This will also delete all items in this category. This action cannot be undone.`)) return;
 
     try {
-      await categoriesAPI.delete(id);
+      await hybridCategoriesAPI.delete(id);
       toast.success(`"${categoryName}" deleted successfully`);
       onRefresh();
     } catch (error: any) {

@@ -22,7 +22,8 @@ import {
 } from '../ui/table';
 import { useLang } from '../../lib/LangContext';
 import { t } from '../../lib/i18n';
-import { itemsAPI, Category, Item } from '../../lib/supabase';
+import { Category, Item } from '../../lib/supabase';
+import { hybridItemsAPI } from '../../lib/hybridAPI';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Filter, X, Info, Search, Archive, CheckSquare, Square, MoveRight } from 'lucide-react';
 import { Badge } from '../ui/badge';
@@ -170,10 +171,10 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
       };
 
       if (editingId) {
-        await itemsAPI.update(editingId, data);
+        await hybridItemsAPI.update(editingId, data);
         toast.success('Item updated');
       } else {
-        await itemsAPI.create(data);
+        await hybridItemsAPI.create(data);
         toast.success('Item created');
       }
 
@@ -192,7 +193,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     if (!confirm(`📦 Archive "${itemName}"? You can recover it later from the archive.`)) return;
 
     try {
-      await itemsAPI.archive(id);
+      await hybridItemsAPI.archive(id);
       toast.success(`"${itemName}" archived successfully`);
       onRefresh();
     } catch (error: any) {
