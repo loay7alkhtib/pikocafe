@@ -1,6 +1,4 @@
-import { useState, useCallback } from 'react';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -26,7 +24,7 @@ import { useLang } from '../../lib/LangContext';
 import { t } from '../../lib/i18n';
 import { itemsAPI, Category, Item } from '../../lib/supabase';
 import { toast } from 'sonner';
-import { Plus, Edit, Trash2, Filter, X, Info, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Filter, X, Info, Search, Archive } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
@@ -43,6 +41,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [localItems, setLocalItems] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   const [formData, setFormData] = useState({
     nameEn: '',
     nameTr: '',
@@ -52,21 +51,25 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     image: '',
     tags: '',
     variants: [] as { size: string; price: number }[],
+    order: 0,
   });
 
   // Update local items when props change
-  useState(() => {
-    setLocalItems([...items]);
-  });
+  useEffect(() => {
+    setLocalItems([...items].sort((a, b) => (a.order || 0) - (b.order || 0)));
+  }, [items]);
 
   // Filter items by selected category
-  // Filter items by category and search query
+  // Filter items by category, search query, and archive status
   const filteredItems = localItems.filter(item => {
+    // Archive filter
+    const archiveMatch = showArchived ? item.archived_at : !item.archived_at;
+    
     // Category filter
     const categoryMatch = selectedCategory === 'all' || item.category_id === selectedCategory;
     
     // Search filter
-    if (!searchQuery.trim()) return categoryMatch;
+    if (!searchQuery.trim()) return archiveMatch && categoryMatch;
     
     const query = searchQuery.toLowerCase().trim();
     const searchMatch = 
@@ -75,47 +78,9 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
       item.names.ar?.toLowerCase().includes(query) ||
       item.tags?.some(tag => tag.toLowerCase().includes(query));
     
-    return categoryMatch && searchMatch;
+    return archiveMatch && categoryMatch && searchMatch;
   });
 
-  const moveItem = useCallback(async (dragIndex: number, hoverIndex: number) => {
-    if (dragIndex === hoverIndex) return;
-    
-    const dragItem = filteredItems[dragIndex];
-    const hoverItem = filteredItems[hoverIndex];
-    
-    // Only allow reordering within same category
-    if (dragItem.category_id !== hoverItem.category_id) {
-      return;
-    }
-
-    // Create new filtered items array with reordered items
-    const newFilteredItems = [...filteredItems];
-    const draggedItem = newFilteredItems.splice(dragIndex, 1)[0];
-    newFilteredItems.splice(hoverIndex, 0, draggedItem);
-    
-    // Update local items by replacing the filtered items in the correct positions
-    const updatedAllItems = localItems.map(item => {
-      const foundIndex = newFilteredItems.findIndex(ni => ni.id === item.id);
-      if (foundIndex !== -1) {
-        return newFilteredItems[foundIndex];
-      }
-      return item;
-    });
-    
-    setLocalItems(updatedAllItems);
-    
-    try {
-      // Here you would typically update the order in the backend
-      // For now, we'll just show a success message
-      toast.success('Item order updated successfully');
-    } catch (error: any) {
-      console.error('Reorder error:', error);
-      toast.error('Failed to update order');
-      // Revert to original items on error
-      setLocalItems([...items]);
-    }
-  }, [filteredItems, localItems, items]);
 
   const openDialog = (item?: Item) => {
     if (item) {
@@ -129,9 +94,15 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
         image: item.image || '',
         tags: item.tags.join(', '),
         variants: item.variants || [],
+        order: item.order || 0,
       });
     } else {
       setEditingId(null);
+      const categoryItems = localItems.filter(i => i.category_id === categories[0]?.id);
+      // Get the highest order value for this category and add 1
+      const maxOrder = categoryItems.length > 0 
+        ? Math.max(...categoryItems.map(i => i.order || 0)) + 1 
+        : 0;
       setFormData({
         nameEn: '',
         nameTr: '',
@@ -141,6 +112,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
         image: '',
         tags: '',
         variants: [],
+        order: maxOrder,
       });
     }
     setDialogOpen(true);
@@ -159,6 +131,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
         image: formData.image || null,
         tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
         variants: formData.variants.length > 0 ? formData.variants : undefined,
+        order: formData.order,
       };
 
       if (editingId) {
@@ -177,19 +150,19 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleArchive = async (id: string) => {
     const item = localItems.find(item => item.id === id);
     const itemName = item ? (item.names[lang] || item.names.en || 'this item') : 'this item';
     
-    if (!confirm(`⚠️ Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) return;
+    if (!confirm(`📦 Archive "${itemName}"? You can recover it later from the archive.`)) return;
 
     try {
-      await itemsAPI.delete(id);
-      toast.success(`"${itemName}" deleted successfully`);
+      await itemsAPI.archive(id);
+      toast.success(`"${itemName}" archived successfully`);
       onRefresh();
     } catch (error: any) {
-      console.error('Delete error:', error);
-      toast.error(error.message || 'Failed to delete item');
+      console.error('Archive error:', error);
+      toast.error(error.message || 'Failed to archive item');
     }
   };
 
@@ -231,20 +204,38 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h2 className="text-xl font-medium">{t('items', lang)}</h2>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button onClick={() => openDialog()} className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t('addNew', lang)}
+          <Button 
+            onClick={() => setShowArchived(!showArchived)} 
+            variant={showArchived ? "default" : "outline"}
+            className="gap-2"
+          >
+            <Archive className="w-4 h-4" />
+            {showArchived ? 'Show Active' : 'Show Archived'}
           </Button>
+          {!showArchived && (
+            <Button onClick={() => openDialog()} className="gap-2">
+              <Plus className="w-4 h-4" />
+              {t('addNew', lang)}
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Drag-and-Drop Info */}
-      {filteredItems.length > 1 && selectedCategory !== 'all' && (
+      {/* Archive Info */}
+      {showArchived ? (
+        <Alert className="border-orange-200 bg-orange-50">
+          <Info className="h-4 w-4 text-orange-600" />
+          <AlertTitle className="text-orange-800">Archived Items</AlertTitle>
+          <AlertDescription className="text-orange-700">
+            Showing archived (soft deleted) items. These items are hidden from customers but can be restored. Use the Archive tab to manage them.
+          </AlertDescription>
+        </Alert>
+      ) : (
         <Alert className="border-blue-200 bg-blue-50">
           <Info className="h-4 w-4 text-blue-600" />
-          <AlertTitle className="text-blue-800">Drag to Reorder Items</AlertTitle>
+          <AlertTitle className="text-blue-800">Item Management</AlertTitle>
           <AlertDescription className="text-blue-700">
-            Use the grip icon (⋮⋮) to drag and reorder items within this category. Changes are saved automatically.
+            Edit items to set display order. Use the Archive button to soft delete items (they can be restored from the Archive tab).
           </AlertDescription>
         </Alert>
       )}
@@ -316,62 +307,58 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
         </div>
       </div>
 
-      <DndProvider backend={HTML5Backend}>
-        <div className="bg-card rounded-xl border border-border overflow-x-auto">
-          <Table>
-            <TableHeader>
+      <div className="bg-card rounded-xl border border-border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">Image</TableHead>
+              <TableHead className="min-w-[150px]">Name (EN)</TableHead>
+              <TableHead className="min-w-[120px] hidden md:table-cell">Name (AR)</TableHead>
+              <TableHead className="w-24">Price</TableHead>
+              <TableHead className="min-w-[120px] hidden lg:table-cell">Category</TableHead>
+              <TableHead className="min-w-[150px] hidden xl:table-cell">Tags</TableHead>
+              <TableHead className="text-right w-32">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredItems.length === 0 ? (
               <TableRow>
-                <TableHead className="w-10"></TableHead>
-                <TableHead className="w-20">Image</TableHead>
-                <TableHead className="min-w-[150px]">Name (EN)</TableHead>
-                <TableHead className="min-w-[120px] hidden md:table-cell">Name (AR)</TableHead>
-                <TableHead className="w-24">Price</TableHead>
-                <TableHead className="min-w-[120px] hidden lg:table-cell">Category</TableHead>
-                <TableHead className="min-w-[150px] hidden xl:table-cell">Tags</TableHead>
-                <TableHead className="text-right w-32">Actions</TableHead>
+                <td colSpan={7} className="text-center py-12 text-muted-foreground">
+                  {searchQuery ? (
+                    <div className="space-y-2">
+                      <Search className="w-8 h-8 mx-auto opacity-50" />
+                      <p>No items found for "{searchQuery}"</p>
+                      <p className="text-sm">Try adjusting your search terms or category filter</p>
+                    </div>
+                  ) : selectedCategory === 'all' ? (
+                    <div className="space-y-2">
+                      <p>No items found</p>
+                      <p className="text-sm">Add your first item to get started</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p>No items in this category</p>
+                      <p className="text-sm">Try selecting "All Categories" or add items to this category</p>
+                    </div>
+                  )}
+                </td>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredItems.length === 0 ? (
-                <TableRow>
-                  <td colSpan={6} className="text-center py-12 text-muted-foreground">
-                    {searchQuery ? (
-                      <div className="space-y-2">
-                        <Search className="w-8 h-8 mx-auto opacity-50" />
-                        <p>No items found for "{searchQuery}"</p>
-                        <p className="text-sm">Try adjusting your search terms or category filter</p>
-                      </div>
-                    ) : selectedCategory === 'all' ? (
-                      <div className="space-y-2">
-                        <p>No items found</p>
-                        <p className="text-sm">Add your first item to get started</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <p>No items in this category</p>
-                        <p className="text-sm">Try selecting "All Categories" or add items to this category</p>
-                      </div>
-                    )}
-                  </td>
-                </TableRow>
-              ) : (
-                filteredItems.map((item, index) => (
-                  <DraggableItem
-                    key={item.id}
-                    item={item}
-                    index={index}
-                    categories={categories}
-                    onMove={moveItem}
-                    onEdit={openDialog}
-                    onDelete={handleDelete}
-                    onCategoryChange={handleCategoryChange}
-                  />
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </DndProvider>
+            ) : (
+              filteredItems.map((item, index) => (
+                <DraggableItem
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  categories={categories}
+                  onEdit={openDialog}
+                  onDelete={handleArchive}
+                  onCategoryChange={handleCategoryChange}
+                />
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -452,6 +439,18 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
                 onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
                 placeholder="Premium, Fresh, Hot"
               />
+            </div>
+            <div>
+              <Label>Display Order</Label>
+              <Input
+                type="number"
+                value={formData.order}
+                onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Lower numbers appear first in the category
+              </p>
             </div>
 
             {/* Size Variants */}

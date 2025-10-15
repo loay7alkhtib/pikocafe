@@ -77,14 +77,14 @@ export default function DraggableCategory({
 
   const opacity = isDragging ? 0.4 : 1;
   
-  drag(drop(ref));
+  drop(ref);
 
   return (
     <div ref={ref} style={{ opacity }} data-handler-id={handlerId}>
       <Card className="transition-opacity">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
+            <div ref={drag as any} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground">
               <GripVertical className="w-5 h-5" />
             </div>
             

@@ -30,7 +30,9 @@ export interface Item {
   image: string | null;
   tags: string[];
   variants?: ItemVariant[]; // Optional size variants
+  order?: number; // Display order within category
   created_at: string;
+  archived_at?: string | null; // When item was archived (null = active)
 }
 
 export interface Order {
@@ -143,6 +145,19 @@ export const itemsAPI = {
     apiCall(`/items/${id}`, {
       method: 'DELETE',
     }),
+  
+  archive: (id: string) =>
+    apiCall(`/items/${id}/archive`, {
+      method: 'PATCH',
+    }),
+  
+  restore: (id: string) =>
+    apiCall(`/items/${id}/restore`, {
+      method: 'PATCH',
+    }),
+  
+  getArchived: () =>
+    apiCall('/items/archived'),
   
   deleteAll: () =>
     apiCall('/items/bulk/delete-all', {

@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { categoriesAPI, itemsAPI, Category, Item } from './supabase';
+import { performanceCache, debounce } from './PerformanceCache';
 import './debug'; // Load diagnostics tool
 
 interface DataContextType {
@@ -26,7 +27,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Fetching all data...');
+      // Check cache first for instant loading
+      const cachedCategories = performanceCache.get<Category[]>('categories');
+      const cachedItems = performanceCache.get<Item[]>('items');
+      
+      if (cachedCategories && cachedItems) {
+        console.log('📦 Using cached data for instant loading');
+        setCategories(cachedCategories);
+        setItems(cachedItems);
+        setLoading(false);
+        
+        // Fetch fresh data in background
+        setTimeout(async () => {
+          try {
+            const [freshCategories, freshItems] = await Promise.all([
+              categoriesAPI.getAll(),
+              itemsAPI.getAll()
+            ]);
+            
+            // Update cache and state with fresh data
+            performanceCache.set('categories', freshCategories, 5 * 60 * 1000);
+            performanceCache.set('items', freshItems, 5 * 60 * 1000);
+            setCategories(freshCategories);
+            setItems(freshItems);
+          } catch (err) {
+            console.warn('Background refresh failed:', err);
+          }
+        }, 100);
+        
+        return;
+      }
+
+      console.log('🌐 Fetching fresh data from server...');
 
       // Try to fetch categories and items in parallel with minimum loading time
       const [categoriesData, itemsData] = await Promise.all([
@@ -47,10 +79,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
         console.warn('⚠️ No categories found. Database might need initialization.');
       }
 
-      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
-      setItems(Array.isArray(itemsData) ? itemsData : []);
+      // Sort categories by order field
+      const sortedCategories = Array.isArray(categoriesData) 
+        ? [...categoriesData].sort((a, b) => (a.order || 0) - (b.order || 0))
+        : [];
       
-      console.log('✅ Data loaded:', {
+      // Ensure items have order field and sort by order field within their categories
+      const sortedItems = Array.isArray(itemsData) 
+        ? [...itemsData]
+            // First, ensure all items have an order field
+            .map((item, index) => ({
+              ...item,
+              order: item.order ?? index
+            }))
+            // Then sort by category order and item order
+            .sort((a, b) => {
+              // First sort by category order, then by item order within category
+              const categoryA = sortedCategories.find(cat => cat.id === a.category_id);
+              const categoryB = sortedCategories.find(cat => cat.id === b.category_id);
+              
+              if (categoryA && categoryB) {
+                const categoryOrderDiff = (categoryA.order || 0) - (categoryB.order || 0);
+                if (categoryOrderDiff !== 0) return categoryOrderDiff;
+              }
+              
+              // If same category or no category, sort by item order
+              return (a.order || 0) - (b.order || 0);
+            })
+        : [];
+      
+      // Cache the data for 5 minutes
+      performanceCache.set('categories', sortedCategories, 5 * 60 * 1000);
+      performanceCache.set('items', sortedItems, 5 * 60 * 1000);
+
+      setCategories(sortedCategories);
+      setItems(sortedItems);
+      
+      console.log('✅ Data loaded and cached:', {
         categories: categoriesData?.length || 0,
         items: itemsData?.length || 0,
       });
@@ -103,9 +168,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(timer);
   }, [fetchAllData]);
 
-  // Helper to get items for a specific category
+  // Helper to get items for a specific category, sorted by order with caching
   const getCategoryItems = useCallback((categoryId: string) => {
-    return items.filter(item => item.category_id === categoryId);
+    const cacheKey = `categoryItems_${categoryId}`;
+    const cached = performanceCache.get<Item[]>(cacheKey);
+    
+    if (cached) {
+      return cached;
+    }
+    
+    const categoryItems = items
+      .filter(item => item.category_id === categoryId)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Cache for 2 minutes
+    performanceCache.set(cacheKey, categoryItems, 2 * 60 * 1000);
+    
+    return categoryItems;
   }, [items]);
 
   // Refetch function for admin updates

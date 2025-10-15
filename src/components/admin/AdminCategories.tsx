@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Button } from '../ui/button';
@@ -41,9 +41,9 @@ export default function AdminCategories({ categories, onRefresh }: AdminCategori
   });
 
   // Update local categories when props change
-  useState(() => {
+  useEffect(() => {
     setLocalCategories([...categories].sort((a, b) => a.order - b.order));
-  });
+  }, [categories]);
 
   const moveCategory = useCallback(async (dragIndex: number, hoverIndex: number) => {
     const dragCategory = localCategories[dragIndex];

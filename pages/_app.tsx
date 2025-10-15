@@ -4,6 +4,7 @@ import { CartProvider } from '../src/lib/CartContext'
 import { DataProvider } from '../src/lib/DataContext'
 import { Toaster } from '../src/components/ui/sonner'
 import LanguageWrapper from '../src/components/LanguageWrapper'
+import { PerformanceMonitor } from '../src/components/PerformanceMonitor'
 import '../src/styles/globals.css'
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -16,6 +17,7 @@ export default function App({ Component, pageProps }: AppProps) {
               <Component {...pageProps} />
             </div>
             <Toaster position="bottom-center" />
+            <PerformanceMonitor />
           </CartProvider>
         </DataProvider>
       </LanguageWrapper>

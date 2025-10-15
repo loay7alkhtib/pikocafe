@@ -1,11 +1,9 @@
-import { useRef, useState } from 'react';
-import { useDrag, useDrop } from 'react-dnd';
-import type { Identifier, XYCoord } from 'dnd-core';
+import { useState } from 'react';
 import { TableCell, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { GripVertical, Edit, Trash2, Check, X } from 'lucide-react';
+import { Edit, Trash2, Check, X, Archive } from 'lucide-react';
 import { Item, Category } from '../../lib/supabase';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 
@@ -13,89 +11,21 @@ interface DraggableItemProps {
   item: Item;
   index: number;
   categories: Category[];
-  onMove: (dragIndex: number, hoverIndex: number) => void;
   onEdit: (item: Item) => void;
   onDelete: (id: string) => void;
   onCategoryChange: (itemId: string, newCategoryId: string) => void;
-}
-
-interface DragItem {
-  index: number;
-  id: string;
-  type: string;
-  categoryId: string;
 }
 
 export default function DraggableItem({
   item,
   index,
   categories,
-  onMove,
   onEdit,
   onDelete,
   onCategoryChange,
 }: DraggableItemProps) {
-  const ref = useRef<HTMLTableRowElement>(null);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [tempCategoryId, setTempCategoryId] = useState(item.category_id);
-
-  const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: Identifier | null }>({
-    accept: 'item',
-    collect(monitor) {
-      return {
-        handlerId: monitor.getHandlerId(),
-      };
-    },
-    hover(dragItem: DragItem, monitor) {
-      if (!ref.current) {
-        return;
-      }
-      
-      const dragIndex = dragItem.index;
-      const hoverIndex = index;
-
-      // Don't replace items with themselves
-      if (dragIndex === hoverIndex) {
-        return;
-      }
-
-      // Only allow reordering within the same category
-      if (dragItem.categoryId !== item.category_id) {
-        return;
-      }
-
-      const hoverBoundingRect = ref.current?.getBoundingClientRect();
-      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-      const clientOffset = monitor.getClientOffset();
-      const hoverClientY = (clientOffset as XYCoord).y - hoverBoundingRect.top;
-
-      // Dragging downwards
-      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
-        return;
-      }
-
-      // Dragging upwards
-      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
-        return;
-      }
-
-      onMove(dragIndex, hoverIndex);
-      dragItem.index = hoverIndex;
-    },
-  });
-
-  const [{ isDragging }, drag] = useDrag({
-    type: 'item',
-    item: () => {
-      return { id: item.id, index, categoryId: item.category_id };
-    },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  const opacity = isDragging ? 0.3 : 1;
-  drag(drop(ref));
 
   const category = categories.find((c) => c.id === item.category_id);
 
@@ -105,7 +35,7 @@ export default function DraggableItem({
   };
 
   const handleCategorySave = () => {
-    if (tempCategoryId !== item.category_id) {
+    if (tempCategoryId !== item.category_id && tempCategoryId) {
       onCategoryChange(item.id, tempCategoryId);
     }
     setIsEditingCategory(false);
@@ -117,17 +47,7 @@ export default function DraggableItem({
   };
 
   return (
-    <TableRow 
-      ref={ref} 
-      style={{ opacity }} 
-      data-handler-id={handlerId}
-      className={`transition-all duration-200 ${isDragging ? 'shadow-lg bg-primary/5' : 'hover:bg-muted/30'}`}
-    >
-      <TableCell className="w-8">
-        <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted/50">
-          <GripVertical className="w-5 h-5" />
-        </div>
-      </TableCell>
+    <TableRow className="transition-all duration-200 hover:bg-muted/30">
       <TableCell className="w-16">
         {item.image ? (
           <ImageWithFallback
@@ -154,7 +74,7 @@ export default function DraggableItem({
       <TableCell className="hidden lg:table-cell">
         {isEditingCategory ? (
           <div className="flex items-center gap-2">
-            <Select value={tempCategoryId} onValueChange={setTempCategoryId}>
+            <Select value={tempCategoryId || ''} onValueChange={setTempCategoryId}>
               <SelectTrigger className="w-[180px] h-8">
                 <SelectValue />
               </SelectTrigger>
@@ -211,8 +131,14 @@ export default function DraggableItem({
           <Button onClick={() => onEdit(item)} variant="outline" size="sm">
             <Edit className="w-4 h-4" />
           </Button>
-          <Button onClick={() => onDelete(item.id)} variant="destructive" size="sm">
-            <Trash2 className="w-4 h-4" />
+          <Button 
+            onClick={() => onDelete(item.id)} 
+            variant="outline" 
+            size="sm" 
+            className="text-orange-600 hover:bg-orange-100 hover:text-orange-700 hover:border-orange-300" 
+            title="Archive item (soft delete - can be restored)"
+          >
+            <Archive className="w-4 h-4" />
           </Button>
         </div>
       </TableCell>

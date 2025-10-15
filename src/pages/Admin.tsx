@@ -15,6 +15,7 @@ import { LogOut, Home, RefreshCw } from 'lucide-react';
 const AdminCategories = lazy(() => import('../components/admin/AdminCategories'));
 const AdminItems = lazy(() => import('../components/admin/AdminItems'));
 const AdminOrders = lazy(() => import('../components/admin/AdminOrders'));
+const HistoryPanelComponent = lazy(() => import('../components/admin/HistoryPanel').then(module => ({ default: module.HistoryPanel })));
 
 const Admin = memo(function Admin() {
   const router = useRouter();
@@ -36,7 +37,7 @@ const Admin = memo(function Admin() {
       if (!session) {
         console.log('❌ No session found, redirecting to login');
         toast.error('Not authorized');
-        onNavigate('admin-login');
+        router.push('/admin-login');
         return;
       }
 
@@ -148,19 +149,22 @@ const Admin = memo(function Admin() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="categories" className="w-full">
           {/* Simplified Tab Navigation */}
-          <div className="flex justify-center mb-8">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="categories" className="text-sm">
-                Categories
-              </TabsTrigger>
-              <TabsTrigger value="items" className="text-sm">
-                Menu Items
-              </TabsTrigger>
-              <TabsTrigger value="orders" className="text-sm">
-                Orders
-              </TabsTrigger>
-            </TabsList>
-          </div>
+              <div className="flex justify-center mb-8">
+                <TabsList className="grid w-full max-w-lg grid-cols-4">
+                  <TabsTrigger value="categories" className="text-sm">
+                    Categories
+                  </TabsTrigger>
+                  <TabsTrigger value="items" className="text-sm">
+                    Menu Items
+                  </TabsTrigger>
+                  <TabsTrigger value="orders" className="text-sm">
+                    Orders
+                  </TabsTrigger>
+                  <TabsTrigger value="archive" className="text-sm">
+                    Archive
+                  </TabsTrigger>
+                </TabsList>
+              </div>
 
           {/* Tab Contents */}
           <TabsContent value="categories" className="mt-0">
@@ -196,22 +200,35 @@ const Admin = memo(function Admin() {
             </Suspense>
           </TabsContent>
 
-          <TabsContent value="orders" className="mt-0">
-            <Suspense fallback={
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-4">
-                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                  <p className="text-sm text-muted-foreground">Loading orders...</p>
-                </div>
-              </div>
-            }>
-              <AdminOrders
-                orders={orders}
-                onRefresh={loadOrders}
-              />
-            </Suspense>
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="orders" className="mt-0">
+                <Suspense fallback={
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                      <p className="text-sm text-muted-foreground">Loading orders...</p>
+                    </div>
+                  </div>
+                }>
+                  <AdminOrders
+                    orders={orders}
+                    onRefresh={loadOrders}
+                  />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="archive" className="mt-0">
+                <Suspense fallback={
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center space-y-4">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+                      <p className="text-sm text-muted-foreground">Loading archive...</p>
+                    </div>
+                  </div>
+                }>
+                  <HistoryPanelComponent onRestore={handleRefresh} />
+                </Suspense>
+              </TabsContent>
+            </Tabs>
       </main>
     </div>
   );
