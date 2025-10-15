@@ -111,14 +111,14 @@ export const categoriesAPI = {
   },
   
   update: async (id: string, data: Omit<Category, 'id' | 'created_at'>) => {
-    return apiCall(`/categories/${id}`, {
+    return apiCall('/categories', {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ id, ...data }),
     });
   },
-  
+
   delete: async (id: string) => {
-    return apiCall(`/categories/${id}`, {
+    return apiCall(`/categories?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
   },
@@ -139,20 +139,20 @@ export const itemsAPI = {
   },
   
   update: (id: string, data: Omit<Item, 'id' | 'created_at'>) => {
-    return apiCall(`/items/${id}`, {
+    return apiCall('/items', {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ id, ...data }),
     });
   },
-  
+
   delete: (id: string) => {
-    return apiCall(`/items/${id}`, {
+    return apiCall(`/items?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
   },
-  
+
   archive: async (id: string) => {
-    return apiCall(`/items/${id}`, {
+    return apiCall(`/items?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
   },
