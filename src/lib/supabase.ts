@@ -51,7 +51,7 @@ export interface Order {
 }
 
 // API base URL - use local API routes for better reliability
-const API_BASE = '';
+const API_BASE = '/api';
 
 // Simple cache for categories (5 minutes TTL)
 let categoriesCache: { data: Category[]; timestamp: number } | null = null;
