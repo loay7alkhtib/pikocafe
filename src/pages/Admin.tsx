@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, memo, lazy, Suspense } from 'react';
+import { useEffect, useState, memo, lazy, Suspense, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -27,9 +27,9 @@ const Admin = memo(function Admin() {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
-  async function checkAuth() {
+  const checkAuth = useCallback(async () => {
     try {
       console.log('🔍 Checking admin session...');
       const { data: { session } } = await authAPI.getSession();
@@ -51,7 +51,7 @@ const Admin = memo(function Admin() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [router]);
 
   async function loadOrders() {
     try {

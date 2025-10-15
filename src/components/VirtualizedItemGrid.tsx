@@ -44,7 +44,7 @@ const VirtualizedItemGrid = memo(function VirtualizedItemGrid({
   const rowCount = Math.ceil(items.length / columnCount);
   const itemHeight = 280; // Approximate height of each item card
 
-  const Cell = memo(({ columnIndex, rowIndex, style }: any) => {
+  const Cell = memo(function Cell({ columnIndex, rowIndex, style }: any) {
     const itemIndex = rowIndex * columnCount + columnIndex;
     const item = items[itemIndex];
 
@@ -94,5 +94,7 @@ const VirtualizedItemGrid = memo(function VirtualizedItemGrid({
     </Grid>
   );
 });
+
+VirtualizedItemGrid.displayName = 'VirtualizedItemGrid';
 
 export default VirtualizedItemGrid;

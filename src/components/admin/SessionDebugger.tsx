@@ -204,7 +204,7 @@ export function SessionDebugger() {
         <Alert className="bg-blue-50 border-blue-200">
           <Info className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-800 text-xs">
-            Sessions expire after 7 days. Use "Touch Session" to update the timestamp.
+            Sessions expire after 7 days. Use &ldquo;Touch Session&rdquo; to update the timestamp.
           </AlertDescription>
         </Alert>
       </div>

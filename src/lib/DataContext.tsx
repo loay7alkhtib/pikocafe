@@ -547,7 +547,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             <h2 className="text-xl font-medium">Cannot Connect to Server</h2>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                The menu data couldn't be loaded. This might be because:
+                The menu data couldn&apos;t be loaded. This might be because:
               </p>
               <ul className="text-xs text-muted-foreground text-start space-y-1 bg-muted/30 p-3 rounded-lg">
                 <li>• The server is starting up (wait a moment)</li>

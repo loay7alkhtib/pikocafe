@@ -262,7 +262,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
         </div>
         {searchQuery && (
           <p className="text-sm text-muted-foreground mt-2">
-            {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''} found for "{searchQuery}"
+            {filteredItems.length} item{filteredItems.length !== 1 ? 's' : ''} found for &ldquo;{searchQuery}&rdquo;
           </p>
         )}
       </div>
@@ -327,7 +327,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
                   {searchQuery ? (
                     <div className="space-y-2">
                       <Search className="w-8 h-8 mx-auto opacity-50" />
-                      <p>No items found for "{searchQuery}"</p>
+                        <p>No items found for &quot;{searchQuery}&quot;</p>
                       <p className="text-sm">Try adjusting your search terms or category filter</p>
                     </div>
                   ) : selectedCategory === 'all' ? (
@@ -338,7 +338,7 @@ export default function AdminItems({ items, categories, onRefresh }: AdminItemsP
                   ) : (
                     <div className="space-y-2">
                       <p>No items in this category</p>
-                      <p className="text-sm">Try selecting "All Categories" or add items to this category</p>
+                        <p className="text-sm">Try selecting &quot;All Categories&quot; or add items to this category</p>
                     </div>
                   )}
                 </td>
